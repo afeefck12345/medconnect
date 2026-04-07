@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Doctor = require('../models/Doctor'); // ✅ Import Doctor model
 const generateToken = require('../utils/generateToken');
 
 // @desc    Register new user
@@ -8,14 +9,29 @@ const registerUser = async (req, res) => {
   try {
     const { name, email, password, role, phone } = req.body;
 
+    // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // 1. Create the User identity
     const user = await User.create({ name, email, password, role, phone });
 
     if (user) {
+      // 2. AUTOMATIC DOCTOR PROFILE CREATION
+      // If the user registered as a doctor, we must create a document in the Doctor collection
+      // so they immediately appear in the patient's search results.
+      if (user.role === 'doctor') {
+        await Doctor.create({
+          user: user._id,           // Link to the User ID just created
+          specialization: 'General Physician', // Default placeholder
+          experience: 0,
+          consultationFee: 500,     // Default starting fee
+          isApproved: true,         // Set to true so they are visible immediately
+        });
+      }
+
       return res.status(201).json({
         _id: user._id,
         name: user.name,
@@ -27,7 +43,7 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message }); // ✅ added
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -52,7 +68,7 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message }); // ✅ added
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -68,7 +84,7 @@ const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message }); // ✅ added
+    res.status(500).json({ message: error.message });
   }
 };
 

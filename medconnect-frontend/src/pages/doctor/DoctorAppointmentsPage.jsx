@@ -28,19 +28,24 @@ const DoctorAppointmentsPage = () => {
     navigate('/login')
   }
 
+  // Optimized Status Handler with UI Feedback
   const handleStatus = async (id, status) => {
     setActionLoading(id)
     try {
       await API.put(`/appointments/${id}/status`, { status })
-      dispatch(getMyAppointments())
+      await dispatch(getMyAppointments())
+      console.log(`Appointment ${status} successfully!`)
     } catch (err) {
-      console.error(err)
+      console.error("Update failed:", err)
+      alert(err.response?.data?.message || "Could not update status.")
     } finally {
       setActionLoading(null)
     }
   }
 
-  const filtered = filter === 'all' ? appointments : appointments.filter((a) => a.status === filter)
+  const filtered = (appointments || []).filter((a) => 
+    filter === 'all' ? true : a.status === filter
+  )
 
   const navLinks = [
     { label: 'Dashboard', path: '/doctor/dashboard' },
@@ -50,12 +55,8 @@ const DoctorAppointmentsPage = () => {
     { label: 'Profile', path: '/doctor/profile' },
   ]
 
-  navigate(`/consultation?appointmentId=${apt._id}&doctor=${apt.doctor?.name}`)
-
   return (
     <div className="min-h-screen bg-gray-50">
-
-      {/* Navbar */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -65,7 +66,7 @@ const DoctorAppointmentsPage = () => {
               </svg>
             </div>
             <span className="font-bold text-gray-900 text-lg">MedConnect</span>
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-1">Doctor</span>
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-1">Doctor Portal</span>
           </div>
           <div className="flex items-center gap-4">
             {navLinks.map((link) => (
@@ -79,19 +80,16 @@ const DoctorAppointmentsPage = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Appointments</h1>
-          <span className="text-sm text-gray-400">{filtered.length} appointment{filtered.length !== 1 ? 's' : ''}</span>
+          <span className="text-sm text-gray-400">{filtered.length} total</span>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           {['all', 'pending', 'confirmed', 'completed', 'rejected'].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium capitalize transition ${
-                filter === tab
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white text-gray-500 border border-gray-200 hover:border-green-400'
+              className={`px-4 py-1.5 rounded-full text-sm font-medium capitalize transition shrink-0 ${
+                filter === tab ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-500 border border-gray-200 hover:border-green-300'
               }`}
             >
               {tab}
@@ -100,14 +98,12 @@ const DoctorAppointmentsPage = () => {
         </div>
 
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Loading appointments...</div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">No {filter !== 'all' ? filter : ''} appointments found</div>
+          <div className="text-center py-16 text-gray-400">Loading...</div>
         ) : (
           <div className="space-y-4">
             {filtered.map((apt) => (
-              <div key={apt._id} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
-                <div className="flex items-start justify-between">
+              <div key={apt._id} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg">
                       {apt.patient?.name?.charAt(0) || 'P'}
@@ -118,46 +114,49 @@ const DoctorAppointmentsPage = () => {
                       <p className="text-xs text-gray-500 mt-1">
                         📅 {new Date(apt.date).toLocaleDateString()} &nbsp; 🕐 {apt.timeSlot}
                       </p>
-                      {apt.reason && (
-                        <p className="text-xs text-gray-500 mt-1 bg-gray-50 px-3 py-1.5 rounded-lg">
-                          💬 {apt.reason}
-                        </p>
-                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-col items-end">
-                    <span className={`text-xs font-medium px-3 py-1 rounded-full capitalize ${statusColors[apt.status] || 'bg-gray-100 text-gray-500'}`}>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <span className={`text-xs font-medium px-3 py-1 rounded-full capitalize ${statusColors[apt.status] || 'bg-gray-100'}`}>
                       {apt.status}
                     </span>
+                    
                     {apt.status === 'pending' && (
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex gap-2">
                         <button
                           onClick={() => handleStatus(apt._id, 'confirmed')}
                           disabled={actionLoading === apt._id}
-                          className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                          className="text-xs bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                         >
-                          {actionLoading === apt._id ? '...' : 'Accept'}
+                          {actionLoading === apt._id ? 'Updating...' : 'Accept'}
                         </button>
                         <button
                           onClick={() => handleStatus(apt._id, 'rejected')}
                           disabled={actionLoading === apt._id}
-                          className="text-xs bg-red-50 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-100 transition disabled:opacity-50"
+                          className="text-xs bg-red-50 text-red-500 px-4 py-2 rounded-lg hover:bg-red-100 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                         >
                           Reject
                         </button>
                       </div>
                     )}
+
                     {apt.status === 'confirmed' && (
                       <button
                         onClick={() => handleStatus(apt._id, 'completed')}
                         disabled={actionLoading === apt._id}
-                        className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition mt-2 disabled:opacity-50"
+                        className="text-xs bg-blue-50 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-100 active:scale-95 transition-all cursor-pointer"
                       >
-                        Mark Complete
+                        {actionLoading === apt._id ? 'Working...' : 'Mark Completed'}
                       </button>
                     )}
                   </div>
                 </div>
+                {apt.reason && (
+                  <div className="mt-3 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg border-l-2 border-green-400 italic">
+                    " {apt.reason} "
+                  </div>
+                )}
               </div>
             ))}
           </div>

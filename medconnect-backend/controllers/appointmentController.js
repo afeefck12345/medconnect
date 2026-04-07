@@ -82,8 +82,9 @@ const getDoctorAppointments = async (req, res) => {
 const updateAppointmentStatus = async (req, res) => {
   try {
     const { status } = req.body;
+    
 
-    const validStatuses = ['confirmed', 'cancelled', 'completed'];
+    const validStatuses = ['confirmed', 'cancelled', 'completed','rejected'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }

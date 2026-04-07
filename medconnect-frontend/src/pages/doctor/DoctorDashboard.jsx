@@ -88,8 +88,12 @@ const DoctorDashboard = () => {
         {/* Hero */}
         <div className="bg-green-600 rounded-2xl p-8 mb-8 text-white">
           <p className="text-green-100 text-sm mb-1">Welcome back, Doctor</p>
-          <h1 className="text-3xl font-bold mb-2">Dr. {user?.name || 'Doctor'} 👋</h1>
-          <p className="text-green-100 mb-6">{user?.specialization || 'Specialist'} · {user?.experience || 0} years experience</p>
+    
+            <h1 className="text-3xl font-bold mb-2">Dr. {user?.name || 'Doctor'} 👋</h1>
+            {/* Use form or separate doctor state if available, or just keep safe with ?. */}
+            <p className="text-green-100 mb-6">
+              {user?.specialization || 'Professional Specialist'} · {user?.experience || 0} years experience
+            </p>
           <div className="flex gap-3">
             <button
               onClick={() => navigate('/doctor/appointments')}

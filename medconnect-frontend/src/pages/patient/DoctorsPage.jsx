@@ -16,15 +16,16 @@ const DoctorsPage = () => {
     dispatch(getAllDoctors())
   }, [dispatch])
 
-  const filtered = doctors.filter((doc) => {
-    const matchSearch = doc.name?.toLowerCase().includes(search.toLowerCase())
+  // Logic: Correctly reaching into doctor.user.name
+  const filtered = (Array.isArray(doctors) ? doctors : []).filter((doc) => {
+    const doctorName = doc.user?.name || "" 
+    const matchSearch = doctorName.toLowerCase().includes(search.toLowerCase())
     const matchSpec = selectedSpec === 'All' || doc.specialization === selectedSpec
     return matchSearch && matchSpec
   })
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       {/* Navbar */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -44,7 +45,6 @@ const DoctorsPage = () => {
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Find Doctors</h1>
@@ -93,11 +93,13 @@ const DoctorsPage = () => {
                 onClick={() => navigate(`/doctors/${doctor._id}`)}
               >
                 <div className="flex items-center gap-3 mb-4">
+                  {/* FIXED: Reaching into user object for initials */}
                   <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xl flex-shrink-0">
-                    {doctor.name?.charAt(0).toUpperCase()}
+                    {doctor.user?.name?.charAt(0).toUpperCase() || 'D'}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-800">{doctor.name}</p>
+                    {/* FIXED: Reaching into user object for name */}
+                    <p className="font-semibold text-gray-800">{doctor.user?.name || "Doctor"}</p>
                     <p className="text-xs text-green-600 font-medium">{doctor.specialization || 'General Physician'}</p>
                     <p className="text-xs text-gray-400">{doctor.experience || 0} years experience</p>
                   </div>
@@ -106,7 +108,8 @@ const DoctorsPage = () => {
                   <div className="flex items-center gap-1">
                     <span className="text-yellow-400 text-xs">⭐</span>
                     <span className="text-xs font-medium text-gray-700">{doctor.rating || '4.5'}</span>
-                    <span className="text-xs text-gray-400">({doctor.reviewCount || 0} reviews)</span>
+                    {/* FIXED: Using totalReviews to match your Backend Model */}
+                    <span className="text-xs text-gray-400">({doctor.totalReviews || 0} reviews)</span>
                   </div>
                   <button className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition">
                     Book Now

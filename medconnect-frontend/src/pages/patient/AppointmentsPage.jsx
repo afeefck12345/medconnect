@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getMyAppointments, bookAppointment } from '../../features/appointment/appointmentSlice'
+import { getAllDoctors } from '../../features/doctor/doctorSlice' // Added Import
 
 const statusColors = {
   pending: 'bg-yellow-50 text-yellow-600',
@@ -27,21 +28,23 @@ const AppointmentsPage = () => {
 
   useEffect(() => {
     dispatch(getMyAppointments())
+    dispatch(getAllDoctors()) // Added: Ensure doctors are loaded for the modal
   }, [dispatch])
 
   const handleBook = async (e) => {
     e.preventDefault()
-    await dispatch(bookAppointment(bookingData))
-    setShowBooking(false)
-    dispatch(getMyAppointments())
+    const res = await dispatch(bookAppointment(bookingData))
+    if (!res.error) {
+       setShowBooking(false)
+       dispatch(getMyAppointments())
+    }
   }
 
   const timeSlots = ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM']
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-      {/* Navbar */}
+      {/* Navbar stays the same */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <button onClick={() => navigate('/home')} className="flex items-center gap-2">
@@ -86,11 +89,14 @@ const AppointmentsPage = () => {
                   >
                     <option value="">-- Select a doctor --</option>
                     {doctors.map((doc) => (
-                      <option key={doc._id} value={doc._id}>{doc.name} — {doc.specialization}</option>
+                      <option key={doc._id} value={doc._id}>
+                        {doc.user?.name || "Doctor"} — {doc.specialization} 
+                      </option>
                     ))}
                   </select>
                 </div>
 
+                {/* Rest of form (Date, Slots, Reason) stays the same */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 block mb-1.5">Date</label>
                   <input
@@ -146,29 +152,16 @@ const AppointmentsPage = () => {
           </div>
         )}
 
-        {/* Appointments List */}
-        {loading ? (
-          <div className="text-center py-16 text-gray-400">Loading appointments...</div>
-        ) : appointments.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-gray-400 mb-4">No appointments yet</p>
-            <button
-              onClick={() => setShowBooking(true)}
-              className="bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm hover:bg-green-700 transition"
-            >
-              Book your first appointment
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
+        {/* Appointments list Logic (Fixed names here too) */}
+        <div className="space-y-4">
             {appointments.map((apt) => (
               <div key={apt._id} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg">
-                    {apt.doctor?.name?.charAt(0) || 'D'}
+                    {apt.doctor?.user?.name?.charAt(0) || 'D'}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-800">{apt.doctor?.name || 'Doctor'}</p>
+                    <p className="font-semibold text-gray-800">{apt.doctor?.user?.name || 'Doctor'}</p>
                     <p className="text-xs text-gray-400">{apt.doctor?.specialization || 'Specialist'}</p>
                     <p className="text-xs text-gray-500 mt-1">📅 {new Date(apt.date).toLocaleDateString()} &nbsp; 🕐 {apt.timeSlot}</p>
                   </div>
@@ -178,8 +171,7 @@ const AppointmentsPage = () => {
                 </span>
               </div>
             ))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )

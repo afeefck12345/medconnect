@@ -13,37 +13,50 @@ const SPECIALIZATIONS = [
 const DoctorProfilePage = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { user, loading } = useSelector((state) => state.auth)
+  const { user } = useSelector((state) => state.auth)
 
   const [form, setForm] = useState({
     name: '',
     email: '',
     specialization: '',
     experience: '',
-    fee: '',
+    fee: '', // We use 'fee' in the form
     phone: '',
     bio: '',
   })
+  
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState(null)
 
+  // 1. Initial Load: Get User Identity
   useEffect(() => {
     dispatch(getUserProfile())
   }, [dispatch])
 
+  // 2. Secondary Load: Fetch Doctor-specific data and merge it into the form
   useEffect(() => {
-    if (user) {
-      setForm({
-        name: user.name || '',
-        email: user.email || '',
-        specialization: user.specialization || '',
-        experience: user.experience || '',
-        fee: user.fee || '',
-        phone: user.phone || '',
-        bio: user.bio || '',
-      })
-    }
+    const fetchDoctorDetails = async () => {
+      if (user) {
+        try {
+          const { data } = await API.get('/doctors/profile');
+          // 'data' here is the Doctor document from your doctor collection
+          setForm({
+            name: user.name || '',
+            email: user.email || '',
+            phone: user.phone || '',
+            specialization: data.specialization || '',
+            experience: data.experience || '',
+            fee: data.consultationFee || '', // Mapping DB 'consultationFee' to form 'fee'
+            bio: data.bio || '',
+          });
+        } catch (err) {
+          console.log("No specific doctor profile found, using user defaults");
+          setForm(prev => ({ ...prev, name: user.name, email: user.email, phone: user.phone }));
+        }
+      }
+    };
+    fetchDoctorDetails();
   }, [user])
 
   const handleLogout = () => {
@@ -56,7 +69,16 @@ const DoctorProfilePage = () => {
     setSaving(true)
     setError(null)
     try {
-      await API.put('/doctors/profile', form)
+      // FIX: Mapping the form field 'fee' back to 'consultationFee' for the Backend
+      const payload = {
+        ...form,
+        consultationFee: Number(form.fee),
+        experience: Number(form.experience)
+      }
+
+      await API.post('/doctors/profile', payload) // Using POST as per your controller logic for create/update
+      
+      // Refresh user data in Redux
       dispatch(getUserProfile())
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
@@ -70,14 +92,11 @@ const DoctorProfilePage = () => {
   const navLinks = [
     { label: 'Dashboard', path: '/doctor/dashboard' },
     { label: 'Appointments', path: '/doctor/appointments' },
-    { label: 'Schedule', path: '/doctor/schedule' },
-    { label: 'Prescriptions', path: '/doctor/prescriptions' },
     { label: 'Profile', path: '/doctor/profile' },
   ]
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       {/* Navbar */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -88,7 +107,7 @@ const DoctorProfilePage = () => {
               </svg>
             </div>
             <span className="font-bold text-gray-900 text-lg">MedConnect</span>
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-1">Doctor</span>
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-1">Doctor Portal</span>
           </div>
           <div className="flex items-center gap-4">
             {navLinks.map((link) => (
@@ -102,30 +121,20 @@ const DoctorProfilePage = () => {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
 
-        {/* Profile Card */}
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm mb-6">
+          {/* Header Section */}
           <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-2xl">
               {user?.name?.charAt(0)?.toUpperCase() || 'D'}
             </div>
             <div>
               <h2 className="font-bold text-gray-900 text-lg">Dr. {user?.name}</h2>
-              <p className="text-sm text-gray-400">{user?.specialization || 'Specialist'}</p>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">
-                  ⭐ {user?.rating || '4.5'} rating
-                </span>
-                <span className="text-xs text-gray-400">{user?.experience || 0} yrs experience</span>
-              </div>
+              <p className="text-sm text-gray-400">{form.specialization || 'Setup your specialization'}</p>
             </div>
           </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-500 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>
-          )}
-          {saved && (
-            <div className="bg-green-50 text-green-600 text-sm px-4 py-3 rounded-lg mb-4">✓ Profile updated successfully</div>
-          )}
+          {error && <div className="bg-red-50 text-red-500 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>}
+          {saved && <div className="bg-green-50 text-green-600 text-sm px-4 py-3 rounded-lg mb-4">✓ Profile saved successfully</div>}
 
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -139,13 +148,8 @@ const DoctorProfilePage = () => {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  disabled
-                  className="w-full px-4 py-2.5 border border-gray-100 bg-gray-50 rounded-lg text-sm text-gray-400 cursor-not-allowed"
-                />
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">Email (Read Only)</label>
+                <input type="email" value={form.email} disabled className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-lg text-sm text-gray-400 cursor-not-allowed" />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1.5">Specialization</label>
@@ -155,31 +159,8 @@ const DoctorProfilePage = () => {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <option value="">Select specialization</option>
-                  {SPECIALIZATIONS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
+                  {SPECIALIZATIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">Phone</label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="+91 XXXXX XXXXX"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1.5">Years of Experience</label>
-                <input
-                  type="number"
-                  value={form.experience}
-                  onChange={(e) => setForm({ ...form, experience: e.target.value })}
-                  min="0"
-                  placeholder="e.g. 5"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1.5">Consultation Fee (₹)</label>
@@ -187,8 +168,6 @@ const DoctorProfilePage = () => {
                   type="number"
                   value={form.fee}
                   onChange={(e) => setForm({ ...form, fee: e.target.value })}
-                  min="0"
-                  placeholder="e.g. 500"
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
@@ -199,7 +178,6 @@ const DoctorProfilePage = () => {
               <textarea
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                placeholder="Write a short bio about your expertise, achievements..."
                 rows={4}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
               />
@@ -211,7 +189,7 @@ const DoctorProfilePage = () => {
                 disabled={saving}
                 className="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition"
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? 'Saving...' : 'Save Profile'}
               </button>
             </div>
           </form>
@@ -222,3 +200,4 @@ const DoctorProfilePage = () => {
 }
 
 export default DoctorProfilePage
+
