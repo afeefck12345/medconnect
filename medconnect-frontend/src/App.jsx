@@ -122,7 +122,7 @@ function App() {
           <ProtectedRoute allowedRoles={['patient']}>
             <PrescriptionsPage />
           </ProtectedRoute>
-        } 
+        } />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -131,5 +131,6 @@ function App() {
     </BrowserRouter>
   )
 }
+
 
 export default App
