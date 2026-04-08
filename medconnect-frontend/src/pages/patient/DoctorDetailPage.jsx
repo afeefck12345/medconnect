@@ -16,6 +16,9 @@ const DoctorDetailPage = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>
   if (!doctor) return <div className="min-h-screen flex items-center justify-center text-gray-400">Doctor not found</div>
 
+  // ✅ FIX: Correctly resolve doctor name from nested user object
+  const doctorName = doctor.user?.name || doctor.name || 'Doctor'
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -36,10 +39,12 @@ const DoctorDetailPage = () => {
           {/* Left — Profile Card */}
           <div className="md:col-span-1">
             <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center shadow-sm">
+              {/* ✅ FIX: Use resolved doctorName variable for avatar initial */}
               <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-3xl mx-auto mb-4">
-                {doctor.name?.charAt(0).toUpperCase()}
+                {doctorName.charAt(0).toUpperCase()}
               </div>
-              <h2 className="font-bold text-gray-900 text-lg">{doctor.name}</h2>
+              {/* ✅ FIX: Use resolved doctorName variable for display */}
+              <h2 className="font-bold text-gray-900 text-lg">{doctorName}</h2>
               <p className="text-green-600 text-sm font-medium">{doctor.specialization || 'General Physician'}</p>
               <p className="text-gray-400 text-xs mt-1">{doctor.experience || 0} years experience</p>
 
@@ -49,7 +54,7 @@ const DoctorDetailPage = () => {
                   <p className="text-xs text-gray-400">Rating</p>
                 </div>
                 <div className="text-center">
-                  <p className="font-bold text-gray-900">{doctor.reviewCount || 0}</p>
+                  <p className="font-bold text-gray-900">{doctor.totalReviews || 0}</p>
                   <p className="text-xs text-gray-400">Reviews</p>
                 </div>
                 <div className="text-center">
@@ -72,7 +77,8 @@ const DoctorDetailPage = () => {
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <h3 className="font-semibold text-gray-800 mb-3">About</h3>
               <p className="text-gray-500 text-sm leading-relaxed">
-                {doctor.bio || `Dr. ${doctor.name} is a highly experienced ${doctor.specialization || 'physician'} with ${doctor.experience || 0} years of practice. Committed to providing quality healthcare to all patients.`}
+                {/* ✅ FIX: Use doctorName in fallback bio text */}
+                {doctor.bio || `Dr. ${doctorName} is a highly experienced ${doctor.specialization || 'physician'} with ${doctor.experience || 0} years of practice. Committed to providing quality healthcare to all patients.`}
               </p>
             </div>
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getMyAppointments, bookAppointment } from '../../features/appointment/appointmentSlice'
-import { getAllDoctors } from '../../features/doctor/doctorSlice' // Added Import
+import { getAllDoctors } from '../../features/doctor/doctorSlice'
 
 const statusColors = {
   pending: 'bg-yellow-50 text-yellow-600',
@@ -28,15 +28,15 @@ const AppointmentsPage = () => {
 
   useEffect(() => {
     dispatch(getMyAppointments())
-    dispatch(getAllDoctors()) // Added: Ensure doctors are loaded for the modal
+    dispatch(getAllDoctors())
   }, [dispatch])
 
   const handleBook = async (e) => {
     e.preventDefault()
     const res = await dispatch(bookAppointment(bookingData))
     if (!res.error) {
-       setShowBooking(false)
-       dispatch(getMyAppointments())
+      setShowBooking(false)
+      dispatch(getMyAppointments())
     }
   }
 
@@ -44,7 +44,7 @@ const AppointmentsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar stays the same */}
+      {/* Navbar */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <button onClick={() => navigate('/home')} className="flex items-center gap-2">
@@ -90,13 +90,12 @@ const AppointmentsPage = () => {
                     <option value="">-- Select a doctor --</option>
                     {doctors.map((doc) => (
                       <option key={doc._id} value={doc._id}>
-                        {doc.user?.name || "Doctor"} — {doc.specialization} 
+                        {doc.user?.name || 'Doctor'} — {doc.specialization}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                {/* Rest of form (Date, Slots, Reason) stays the same */}
                 <div>
                   <label className="text-sm font-medium text-gray-700 block mb-1.5">Date</label>
                   <input
@@ -152,8 +151,29 @@ const AppointmentsPage = () => {
           </div>
         )}
 
-        {/* Appointments list Logic (Fixed names here too) */}
-        <div className="space-y-4">
+        {/* ✅ FIX: Added empty state when no appointments exist */}
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-gray-500 font-medium mb-1">No appointments yet</p>
+            <p className="text-gray-400 text-sm mb-5">Book your first appointment with a doctor</p>
+            <button
+              onClick={() => setShowBooking(true)}
+              className="bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm hover:bg-green-700 transition"
+            >
+              Book Appointment
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
             {appointments.map((apt) => (
               <div key={apt._id} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -171,7 +191,8 @@ const AppointmentsPage = () => {
                 </span>
               </div>
             ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

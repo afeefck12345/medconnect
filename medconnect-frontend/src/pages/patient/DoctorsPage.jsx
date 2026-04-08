@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom' // ✅ FIX: Added useLocation
 import { getAllDoctors } from '../../features/doctor/doctorSlice'
 
 const specializations = ['All', 'General Physician', 'Cardiologist', 'Dermatologist', 'Neurologist', 'Orthopedic', 'Pediatrician']
@@ -8,17 +8,28 @@ const specializations = ['All', 'General Physician', 'Cardiologist', 'Dermatolog
 const DoctorsPage = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const location = useLocation() // ✅ FIX: Read location state
   const { doctors, loading } = useSelector((state) => state.doctor)
   const [search, setSearch] = useState('')
-  const [selectedSpec, setSelectedSpec] = useState('All')
+
+  // ✅ FIX: Auto-apply specialty filter when navigated from HomePage or AI Symptom Checker
+  const [selectedSpec, setSelectedSpec] = useState(
+    location.state?.suggestedSpecialty || 'All'
+  )
 
   useEffect(() => {
     dispatch(getAllDoctors())
   }, [dispatch])
 
-  // Logic: Correctly reaching into doctor.user.name
+  // ✅ FIX: Also update filter if location state changes (e.g. navigating again from home)
+  useEffect(() => {
+    if (location.state?.suggestedSpecialty) {
+      setSelectedSpec(location.state.suggestedSpecialty)
+    }
+  }, [location.state])
+
   const filtered = (Array.isArray(doctors) ? doctors : []).filter((doc) => {
-    const doctorName = doc.user?.name || "" 
+    const doctorName = doc.user?.name || ''
     const matchSearch = doctorName.toLowerCase().includes(search.toLowerCase())
     const matchSpec = selectedSpec === 'All' || doc.specialization === selectedSpec
     return matchSearch && matchSpec
@@ -50,6 +61,21 @@ const DoctorsPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">Find Doctors</h1>
           <p className="text-gray-400 text-sm mt-1">Browse and book appointments with top specialists</p>
         </div>
+
+        {/* ✅ FIX: Show banner when a specialty is pre-selected from navigation */}
+        {location.state?.suggestedSpecialty && selectedSpec !== 'All' && (
+          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-5 flex items-center justify-between">
+            <p className="text-sm text-green-700 font-medium">
+              🤖 Showing results for: <span className="font-bold">{selectedSpec}</span>
+            </p>
+            <button
+              onClick={() => setSelectedSpec('All')}
+              className="text-xs text-green-600 hover:underline"
+            >
+              Clear filter
+            </button>
+          </div>
+        )}
 
         {/* Search */}
         <div className="bg-white border border-gray-100 rounded-xl p-4 mb-5 shadow-sm">
@@ -93,13 +119,11 @@ const DoctorsPage = () => {
                 onClick={() => navigate(`/doctors/${doctor._id}`)}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  {/* FIXED: Reaching into user object for initials */}
                   <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xl flex-shrink-0">
                     {doctor.user?.name?.charAt(0).toUpperCase() || 'D'}
                   </div>
                   <div>
-                    {/* FIXED: Reaching into user object for name */}
-                    <p className="font-semibold text-gray-800">{doctor.user?.name || "Doctor"}</p>
+                    <p className="font-semibold text-gray-800">{doctor.user?.name || 'Doctor'}</p>
                     <p className="text-xs text-green-600 font-medium">{doctor.specialization || 'General Physician'}</p>
                     <p className="text-xs text-gray-400">{doctor.experience || 0} years experience</p>
                   </div>
@@ -108,7 +132,6 @@ const DoctorsPage = () => {
                   <div className="flex items-center gap-1">
                     <span className="text-yellow-400 text-xs">⭐</span>
                     <span className="text-xs font-medium text-gray-700">{doctor.rating || '4.5'}</span>
-                    {/* FIXED: Using totalReviews to match your Backend Model */}
                     <span className="text-xs text-gray-400">({doctor.totalReviews || 0} reviews)</span>
                   </div>
                   <button className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition">
