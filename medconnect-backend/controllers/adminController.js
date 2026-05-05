@@ -98,6 +98,60 @@ const getAnalytics = async (req, res) => {
     const pendingAppointments = await Appointment.countDocuments({ status: 'pending' });
     const totalReviews = await Review.countDocuments();
 
+    const start = new Date()
+    start.setDate(1)
+    start.setHours(0, 0, 0, 0)
+    start.setMonth(start.getMonth() - 5)
+
+    const monthlyAppointmentsRaw = await Appointment.aggregate([
+      { $match: { createdAt: { $gte: start } } },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ])
+
+    const monthlyRevenueRaw = await Appointment.aggregate([
+      { $match: { paymentStatus: 'paid', createdAt: { $gte: start } } },
+      {
+        $lookup: {
+          from: 'doctors',
+          localField: 'doctor',
+          foreignField: '_id',
+          as: 'doctorProfile',
+        },
+      },
+      { $unwind: '$doctorProfile' },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          total: { $sum: '$doctorProfile.consultationFee' },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ])
+
+    const months = []
+    for (let i = 0; i < 6; i += 1) {
+      const date = new Date(start)
+      date.setMonth(start.getMonth() + i)
+      const year = date.getFullYear()
+      const month = date.getMonth() + 1
+      const label = date.toLocaleString('default', { month: 'short' })
+      const appointmentCount = monthlyAppointmentsRaw.find((entry) => entry._id.year === year && entry._id.month === month)?.count || 0
+      const revenue = monthlyRevenueRaw.find((entry) => entry._id.year === year && entry._id.month === month)?.total || 0
+      months.push({ label, appointmentCount, revenue })
+    }
+
     res.json({
       totalUsers,
       totalDoctors,
@@ -108,6 +162,7 @@ const getAnalytics = async (req, res) => {
       cancelledAppointments,
       pendingAppointments,
       totalReviews,
+      monthlyStats: months,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

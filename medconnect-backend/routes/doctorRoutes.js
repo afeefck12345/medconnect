@@ -11,7 +11,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 // ✅ Specific routes FIRST (before /:id)
 router.post('/profile', protect, authorize('doctor'), createDoctorProfile);
-router.get('/profile/me', protect, authorize('doctor'), getDoctorProfile);
+router.get('/profile', protect, authorize('doctor'), getDoctorProfile);
 router.put('/availability', protect, authorize('doctor'), updateAvailability);
 
 // Public routes AFTER

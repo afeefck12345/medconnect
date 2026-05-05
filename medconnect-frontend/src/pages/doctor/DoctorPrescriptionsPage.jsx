@@ -5,21 +5,41 @@ import { getMyAppointments } from '../../features/appointment/appointmentSlice'
 import { logout } from '../../features/auth/authSlice'
 import API from '../../api/axios'
 
+const navLinks = [
+  { label: 'Dashboard',     path: '/doctor/dashboard' },
+  { label: 'Appointments',  path: '/doctor/appointments' },
+  { label: 'Schedule',      path: '/doctor/schedule' },
+  { label: 'Prescriptions', path: '/doctor/prescriptions' },
+  { label: 'Profile',       path: '/doctor/profile' },
+]
+
+const inputStyle = {
+  width: '100%',
+  padding: '11px 16px',
+  border: '1.5px solid #e8edf5',
+  borderRadius: 10,
+  fontSize: 13,
+  color: '#1a2744',
+  background: '#f8faff',
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.2s',
+}
+
 const DoctorPrescriptionsPage = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { user } = useSelector((state) => state.auth)
   const { appointments } = useSelector((state) => state.appointment)
 
   const [prescriptions, setPrescriptions] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [showForm, setShowForm] = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [showForm, setShowForm]   = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({
     appointmentId: '',
     patientName: '',
     diagnosis: '',
-    medicines: [{ name: '', dosage: '', duration: '' }],
+    medicines: [{ name: '', dosage: '', frequency: '', duration: '' }],
     notes: '',
   })
 
@@ -45,37 +65,26 @@ const DoctorPrescriptionsPage = () => {
     navigate('/login')
   }
 
-  const confirmedAppointments = appointments.filter((a) => a.status === 'confirmed' || a.status === 'completed')
+  const confirmedAppointments = appointments.filter(
+    (a) => a.status === 'confirmed' || a.status === 'completed'
+  )
 
-  const addMedicine = () => {
-    setForm((prev) => ({
-      ...prev,
-      medicines: [...prev.medicines, { name: '', dosage: '', duration: '' }],
-    }))
-  }
+  const addMedicine = () =>
+    setForm((p) => ({ ...p, medicines: [...p.medicines, { name: '', dosage: '', frequency: '', duration: '' }] }))
 
-  const removeMedicine = (index) => {
-    setForm((prev) => ({
-      ...prev,
-      medicines: prev.medicines.filter((_, i) => i !== index),
-    }))
-  }
+  const removeMedicine = (i) =>
+    setForm((p) => ({ ...p, medicines: p.medicines.filter((_, idx) => idx !== i) }))
 
-  const updateMedicine = (index, field, value) => {
-    setForm((prev) => {
-      const meds = [...prev.medicines]
-      meds[index] = { ...meds[index], [field]: value }
-      return { ...prev, medicines: meds }
+  const updateMedicine = (i, field, value) =>
+    setForm((p) => {
+      const meds = [...p.medicines]
+      meds[i] = { ...meds[i], [field]: value }
+      return { ...p, medicines: meds }
     })
-  }
 
   const handleAppointmentSelect = (id) => {
     const apt = confirmedAppointments.find((a) => a._id === id)
-    setForm((prev) => ({
-      ...prev,
-      appointmentId: id,
-      patientName: apt?.patient?.name || '',
-    }))
+    setForm((p) => ({ ...p, appointmentId: id, patientName: apt?.patient?.name || '' }))
   }
 
   const handleSubmit = async (e) => {
@@ -84,7 +93,7 @@ const DoctorPrescriptionsPage = () => {
     try {
       await API.post('/prescriptions', form)
       setShowForm(false)
-      setForm({ appointmentId: '', patientName: '', diagnosis: '', medicines: [{ name: '', dosage: '', duration: '' }], notes: '' })
+      setForm({ appointmentId: '', patientName: '', diagnosis: '', medicines: [{ name: '', dosage: '', frequency: '', duration: '' }], notes: '' })
       fetchPrescriptions()
     } catch (err) {
       console.error(err)
@@ -93,68 +102,208 @@ const DoctorPrescriptionsPage = () => {
     }
   }
 
-  const navLinks = [
-    { label: 'Dashboard', path: '/doctor/dashboard' },
-    { label: 'Appointments', path: '/doctor/appointments' },
-    { label: 'Schedule', path: '/doctor/schedule' },
-    { label: 'Prescriptions', path: '/doctor/prescriptions' },
-    { label: 'Profile', path: '/doctor/profile' },
-  ]
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif", background: '#f0f4fa', minHeight: '100vh' }}>
+
+      {/* Top Info Bar */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
+          <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              24/7 Emergency Care Available
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              support@medconnect.com
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.09 1.18 2 2 0 012.07 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.36-.36a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            +1 800 MED-CONNECT
+          </div>
+        </div>
+      </div>
 
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      <nav style={{ background: '#1565c0', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 2px 12px rgba(21,101,192,0.18)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navigate('/doctor/dashboard')}>
+            <div style={{ width: 38, height: 38, background: '#fff', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+                <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" fill="#1565c0"/>
               </svg>
             </div>
-            <span className="font-bold text-gray-900 text-lg">MedConnect</span>
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-1">Doctor</span>
+            <div>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>Med<span style={{ color: '#90caf9' }}>Connect</span></span>
+              <span style={{ display: 'block', color: '#90caf9', fontSize: 10, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', lineHeight: 1 }}>Doctor Portal</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {navLinks.map((link) => (
-              <button key={link.path} onClick={() => navigate(link.path)} className="text-sm text-gray-600 hover:text-green-600 transition">{link.label}</button>
+              <button key={link.path} onClick={() => navigate(link.path)}
+                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
+                onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+              >{link.label}</button>
             ))}
-            <button onClick={handleLogout} className="text-sm bg-red-50 text-red-500 hover:bg-red-100 px-3 py-1.5 rounded-lg transition">Logout</button>
+            <button onClick={handleLogout}
+              style={{ background: 'rgba(255,255,255,0.1)', color: '#ffcdd2', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)', marginLeft: 8, transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.target.style.background = 'rgba(244,67,54,0.25)'; e.target.style.color = '#fff' }}
+              onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#ffcdd2' }}
+            >Logout</button>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Prescriptions</h1>
+      {/* Hero */}
+      <div style={{ background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #0d47a1 100%)', padding: '48px 0 72px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -60, right: -60, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+        <div style={{ position: 'absolute', bottom: -80, left: '30%', width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+        <div style={{ position: 'absolute', top: 20, left: '60%', width: 150, height: 150, borderRadius: '50%', background: 'rgba(144,202,249,0.1)' }} />
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(144,202,249,0.15)', border: '1px solid rgba(144,202,249,0.3)', borderRadius: 20, padding: '6px 16px', marginBottom: 16 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4fc3f7', animation: 'pulse 2s infinite' }} />
+              <span style={{ color: '#90caf9', fontSize: 13, fontWeight: 600 }}>Doctor Portal</span>
+            </div>
+            <h1 style={{ color: '#fff', fontSize: 36, fontWeight: 800, margin: '0 0 10px', letterSpacing: '-0.5px' }}>Prescriptions</h1>
+            <p style={{ color: '#bbdefb', fontSize: 15, margin: 0 }}>Write and manage patient prescriptions from confirmed appointments.</p>
+          </div>
           <button
             onClick={() => setShowForm(true)}
-            className="bg-green-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-700 transition"
+            style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 14, padding: '14px 28px', borderRadius: 10, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
           >
             + New Prescription
           </button>
         </div>
+      </div>
 
-        {/* New Prescription Modal */}
-        {showForm && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4 overflow-y-auto py-8">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl my-auto">
-              <div className="flex items-center justify-between mb-5">
-                <h2 className="font-semibold text-gray-800 text-lg">Write Prescription</h2>
-                <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+      {/* Stats strip floating over hero */}
+      <div style={{ maxWidth: 1200, margin: '-32px auto 0', padding: '0 24px', position: 'relative', zIndex: 10 }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '20px 32px', boxShadow: '0 8px 40px rgba(21,101,192,0.12)', border: '1px solid #e3f2fd', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          {[
+            { label: 'Total Prescriptions', value: prescriptions.length, icon: '💊' },
+            { label: 'This Month',          value: prescriptions.filter(r => new Date(r.createdAt).getMonth() === new Date().getMonth()).length, icon: '📅' },
+            { label: 'Eligible Appointments', value: confirmedAppointments.length, icon: '✅' },
+          ].map((s, i, arr) => (
+            <div key={s.label} style={{ textAlign: 'center', padding: '8px 0', borderRight: i < arr.length - 1 ? '1px solid #e8edf5' : 'none' }}>
+              <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ color: '#1a2744', fontWeight: 800, fontSize: 22 }}>{s.value}</div>
+              <div style={{ color: '#90a4ae', fontSize: 12, fontWeight: 500 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px 64px' }}>
+
+        <div style={{ marginBottom: 28 }}>
+          <p style={{ color: '#1565c0', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.2, margin: 0, marginBottom: 6 }}>Records</p>
+          <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: 26, margin: 0 }}>Written Prescriptions</h2>
+        </div>
+
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '80px 0', gap: 12 }}>
+            <div style={{ width: 36, height: 36, border: '3px solid #e3f2fd', borderTop: '3px solid #1565c0', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            <span style={{ color: '#90a4ae', fontSize: 14 }}>Loading prescriptions...</span>
+          </div>
+        ) : prescriptions.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+            <div style={{ fontSize: 52, marginBottom: 16 }}>💊</div>
+            <p style={{ color: '#90a4ae', fontSize: 15, marginBottom: 24 }}>No prescriptions written yet.</p>
+            <button
+              onClick={() => setShowForm(true)}
+              style={{ background: 'linear-gradient(135deg, #1565c0, #1976d2)', color: '#fff', fontWeight: 700, fontSize: 14, padding: '13px 28px', borderRadius: 10, border: 'none', cursor: 'pointer' }}
+            >
+              Write your first prescription
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {prescriptions.map((rx) => (
+              <div
+                key={rx._id}
+                style={{ background: '#fff', border: '1.5px solid #e8edf5', borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(21,101,192,0.05)', transition: 'all 0.25s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#1565c0'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(21,101,192,0.12)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8edf5'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(21,101,192,0.05)' }}
+              >
+                {/* Card Header */}
+                <div style={{ background: 'linear-gradient(135deg, #e3f2fd, #bbdefb)', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg, #1565c0, #42a5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20, flexShrink: 0, boxShadow: '0 4px 14px rgba(21,101,192,0.25)' }}>
+                      {rx.patient?.name?.charAt(0) || 'P'}
+                    </div>
+                    <div>
+                      <p style={{ color: '#1a2744', fontWeight: 800, fontSize: 16, margin: 0 }}>{rx.patient?.name || 'Patient'}</p>
+                      <p style={{ color: '#546e7a', fontSize: 12, margin: '3px 0 0' }}>📅 {new Date(rx.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                    </div>
+                  </div>
+                  <span style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 12, padding: '6px 16px', borderRadius: 20, border: '1.5px solid #bbdefb' }}>
+                    {rx.diagnosis}
+                  </span>
+                </div>
+
+                {/* Card Body */}
+                <div style={{ padding: '20px 24px' }}>
+                  <p style={{ color: '#1565c0', fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 12px' }}>💊 Medicines</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {rx.medicines?.map((med, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f8faff', borderRadius: 10, padding: '10px 14px' }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1565c0', flexShrink: 0 }} />
+                        <span style={{ color: '#1a2744', fontWeight: 700, fontSize: 13 }}>{med.name}</span>
+                        {med.dosage   && <span style={{ color: '#90a4ae', fontSize: 12 }}>· {med.dosage}</span>}
+                        {med.frequency && <span style={{ color: '#90a4ae', fontSize: 12 }}>· {med.frequency}</span>}
+                        {med.duration && <span style={{ color: '#90a4ae', fontSize: 12 }}>· {med.duration}</span>}
+                      </div>
+                    ))}
+                  </div>
+                  {rx.notes && (
+                    <div style={{ marginTop: 14, padding: '12px 16px', background: '#f8faff', borderRadius: 10, borderLeft: '3px solid #1565c0' }}>
+                      <p style={{ color: '#546e7a', fontSize: 13, margin: 0, lineHeight: 1.6 }}>📝 {rx.notes}</p>
+                    </div>
+                  )}
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Modal */}
+      {showForm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(21,33,64,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '24px', overflowY: 'auto' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '32px', width: '100%', maxWidth: 560, boxShadow: '0 24px 80px rgba(21,101,192,0.2)', position: 'relative' }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+              <div>
+                <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: 20, margin: 0 }}>Write Prescription</h2>
+                <p style={{ color: '#90a4ae', fontSize: 13, margin: '4px 0 0' }}>Fill in the details for the patient prescription</p>
+              </div>
+              <button
+                onClick={() => setShowForm(false)}
+                style={{ width: 36, height: 36, borderRadius: 10, background: '#f8faff', border: '1.5px solid #e8edf5', color: '#546e7a', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 400, lineHeight: 1 }}
+              >×</button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+                {/* Appointment */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1.5">Select Appointment</label>
+                  <label style={{ color: '#1a2744', fontWeight: 700, fontSize: 13, display: 'block', marginBottom: 8 }}>Select Appointment</label>
                   <select
                     value={form.appointmentId}
                     onChange={(e) => handleAppointmentSelect(e.target.value)}
                     required
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    style={{ ...inputStyle, appearance: 'none' }}
+                    onFocus={e => e.target.style.borderColor = '#1565c0'}
+                    onBlur={e => e.target.style.borderColor = '#e8edf5'}
                   >
-                    <option value="">-- Select appointment --</option>
+                    <option value="">— Select appointment —</option>
                     {confirmedAppointments.map((apt) => (
                       <option key={apt._id} value={apt._id}>
                         {apt.patient?.name} — {new Date(apt.date).toLocaleDateString()} {apt.timeSlot}
@@ -163,141 +312,130 @@ const DoctorPrescriptionsPage = () => {
                   </select>
                 </div>
 
+                {/* Diagnosis */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1.5">Diagnosis</label>
+                  <label style={{ color: '#1a2744', fontWeight: 700, fontSize: 13, display: 'block', marginBottom: 8 }}>Diagnosis</label>
                   <input
                     type="text"
                     value={form.diagnosis}
                     onChange={(e) => setForm({ ...form, diagnosis: e.target.value })}
                     placeholder="e.g. Viral fever, Hypertension..."
                     required
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = '#1565c0'}
+                    onBlur={e => e.target.style.borderColor = '#e8edf5'}
                   />
                 </div>
 
+                {/* Medicines */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-gray-700">Medicines</label>
-                    <button type="button" onClick={addMedicine} className="text-xs text-green-600 hover:underline">+ Add Medicine</button>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <label style={{ color: '#1a2744', fontWeight: 700, fontSize: 13 }}>Medicines</label>
+                    <button
+                      type="button"
+                      onClick={addMedicine}
+                      style={{ background: '#e3f2fd', color: '#1565c0', fontWeight: 700, fontSize: 12, padding: '5px 14px', borderRadius: 8, border: 'none', cursor: 'pointer' }}
+                    >+ Add Medicine</button>
                   </div>
-                  <div className="space-y-2">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {form.medicines.map((med, index) => (
-                      <div key={index} className="flex gap-2 items-start">
-                        <div className="flex-1 grid grid-cols-3 gap-2">
+                      <div key={index} style={{ background: '#f8faff', border: '1.5px solid #e8edf5', borderRadius: 12, padding: '14px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                           <input
                             type="text"
                             placeholder="Medicine name"
                             value={med.name}
                             onChange={(e) => updateMedicine(index, 'name', e.target.value)}
-                            className="col-span-3 px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500"
+                            style={{ ...inputStyle, gridColumn: '1 / -1', padding: '9px 14px', fontSize: 12 }}
+                            onFocus={e => e.target.style.borderColor = '#1565c0'}
+                            onBlur={e => e.target.style.borderColor = '#e8edf5'}
                           />
-                          <input
-                            type="text"
-                            placeholder="Dosage"
-                            value={med.dosage}
+                          <input type="text" placeholder="Dosage" value={med.dosage}
                             onChange={(e) => updateMedicine(index, 'dosage', e.target.value)}
-                            className="px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500"
+                            style={{ ...inputStyle, padding: '9px 14px', fontSize: 12 }}
+                            onFocus={e => e.target.style.borderColor = '#1565c0'}
+                            onBlur={e => e.target.style.borderColor = '#e8edf5'}
                           />
-                          <input
-                            type="text"
-                            placeholder="Frequency"
-                            value={med.frequency}
+                          <input type="text" placeholder="Frequency" value={med.frequency}
                             onChange={(e) => updateMedicine(index, 'frequency', e.target.value)}
-                            className="px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500"
+                            style={{ ...inputStyle, padding: '9px 14px', fontSize: 12 }}
+                            onFocus={e => e.target.style.borderColor = '#1565c0'}
+                            onBlur={e => e.target.style.borderColor = '#e8edf5'}
                           />
-                          <input
-                            type="text"
-                            placeholder="Duration"
-                            value={med.duration}
+                          <input type="text" placeholder="Duration" value={med.duration}
                             onChange={(e) => updateMedicine(index, 'duration', e.target.value)}
-                            className="px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500"
+                            style={{ ...inputStyle, padding: '9px 14px', fontSize: 12 }}
+                            onFocus={e => e.target.style.borderColor = '#1565c0'}
+                            onBlur={e => e.target.style.borderColor = '#e8edf5'}
                           />
                         </div>
                         {form.medicines.length > 1 && (
-                          <button type="button" onClick={() => removeMedicine(index)} className="text-red-400 hover:text-red-600 text-lg mt-1">×</button>
+                          <button
+                            type="button"
+                            onClick={() => removeMedicine(index)}
+                            style={{ background: '#ffebee', color: '#c62828', fontWeight: 700, fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer' }}
+                          >Remove</button>
                         )}
                       </div>
                     ))}
                   </div>
                 </div>
 
+                {/* Notes */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1.5">Additional Notes</label>
+                  <label style={{ color: '#1a2744', fontWeight: 700, fontSize: 13, display: 'block', marginBottom: 8 }}>Additional Notes</label>
                   <textarea
                     value={form.notes}
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
                     placeholder="Rest advice, diet, follow-up..."
                     rows={3}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                    style={{ ...inputStyle, resize: 'none', lineHeight: 1.6 }}
+                    onFocus={e => e.target.style.borderColor = '#1565c0'}
+                    onBlur={e => e.target.style.borderColor = '#e8edf5'}
                   />
                 </div>
 
+                {/* Submit */}
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white py-2.5 rounded-lg text-sm font-medium transition"
+                  style={{ background: submitting ? '#90a4ae' : 'linear-gradient(135deg, #1565c0, #1976d2)', color: '#fff', fontWeight: 700, fontSize: 14, padding: '14px', borderRadius: 10, border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', transition: 'opacity 0.2s' }}
+                  onMouseEnter={e => { if (!submitting) e.currentTarget.style.opacity = '0.9' }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
                 >
                   {submitting ? 'Saving...' : 'Save Prescription'}
                 </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Prescriptions List */}
-        {loading ? (
-          <div className="text-center py-16 text-gray-400">Loading prescriptions...</div>
-        ) : prescriptions.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <p className="mb-4">No prescriptions written yet</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm hover:bg-green-700 transition"
-            >
-              Write your first prescription
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {prescriptions.map((rx) => (
-              <div key={rx._id} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">
-                      {rx.patient?.name?.charAt(0) || 'P'}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-800">{rx.patient?.name || 'Patient'}</p>
-                      <p className="text-xs text-gray-400">
-                        📅 {new Date(rx.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-medium">
-                    {rx.diagnosis}
-                  </span>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs font-medium text-gray-600 mb-2">💊 Medicines</p>
-                  <div className="space-y-1">
-                    {rx.medicines?.map((med, i) => (
-                      <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                        <span className="font-medium">{med.name}</span>
-                        {med.dosage && <span className="text-gray-400">· {med.dosage}</span>}
-                        {med.duration && <span className="text-gray-400">· {med.duration}</span>}
-                      </div>
-                    ))}
-                  </div>
-                  {rx.notes && (
-                    <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">📝 {rx.notes}</p>
-                  )}
-                </div>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div style={{ background: '#1a2744', padding: '24px 0' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, background: '#1565c0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: '#fff', fontSize: 16 }}>❤️</span>
+            </div>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>MedConnect</span>
+          </div>
+          <p style={{ color: '#546e7a', fontSize: 13, margin: 0 }}>© 2025 MedConnect. Caring for your health, every step of the way.</p>
+          <div style={{ display: 'flex', gap: 20 }}>
+            {['Privacy Policy', 'Terms of Service', 'Contact'].map((link) => (
+              <span key={link} style={{ color: '#78909c', fontSize: 12, cursor: 'pointer', transition: 'color 0.2s' }}
+                onMouseEnter={e => e.target.style.color = '#90caf9'}
+                onMouseLeave={e => e.target.style.color = '#78909c'}
+              >{link}</span>
             ))}
           </div>
-        )}
+        </div>
       </div>
+
+      <style>{`
+        @keyframes spin  { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      `}</style>
     </div>
   )
 }

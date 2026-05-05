@@ -28,6 +28,17 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  dob: {
+    type: Date,
+  },
+  bloodGroup: {
+    type: String,
+    trim: true,
+  },
+  address: {
+    type: String,
+    trim: true,
+  },
   profilePic: {
     type: String,
     default: '',

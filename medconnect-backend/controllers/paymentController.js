@@ -2,11 +2,28 @@ require('dotenv').config();
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Appointment = require('../models/Appointment');
+const Doctor = require('../models/Doctor');
+const Notification = require('../models/Notification');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
+
+// @desc    Get public Razorpay configuration
+// @route   GET /api/payments/config
+// @access  Private
+const getPaymentConfig = async (req, res) => {
+  try {
+    if (!process.env.RAZORPAY_KEY_ID) {
+      return res.status(500).json({ message: 'Razorpay key is not configured on the server' });
+    }
+
+    return res.json({ key: process.env.RAZORPAY_KEY_ID });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 // @desc    Create Razorpay order
 // @route   POST /api/payments/create-order
@@ -63,6 +80,18 @@ const verifyPayment = async (req, res) => {
       { paymentStatus: 'paid', paymentId: razorpay_payment_id },
       { new: true }
     );
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' })
+    }
+
+    const doctor = await Doctor.findById(appointment.doctor).select('user')
+    await Notification.create({
+      recipient: doctor?.user,
+      title: 'Payment received',
+      message: `Payment completed for appointment on ${new Date(appointment.date).toLocaleDateString()} at ${appointment.timeSlot}.`,
+      type: 'payment',
+      metadata: { appointmentId: appointment._id },
+    })
 
     res.json({ message: 'Payment verified successfully', appointment });
   } catch (error) {
@@ -88,4 +117,4 @@ const getPaymentStatus = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, verifyPayment, getPaymentStatus };
+module.exports = { createOrder, verifyPayment, getPaymentStatus, getPaymentConfig };

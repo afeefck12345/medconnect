@@ -88,4 +88,42 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile };
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { name, phone, dob, bloodGroup, address } = req.body;
+
+    user.name = name ?? user.name;
+    user.phone = phone ?? user.phone;
+    user.dob = dob || null;
+    user.bloodGroup = bloodGroup ?? '';
+    user.address = address ?? '';
+
+    const updatedUser = await user.save();
+
+    return res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      phone: updatedUser.phone,
+      dob: updatedUser.dob,
+      bloodGroup: updatedUser.bloodGroup,
+      address: updatedUser.address,
+      profilePic: updatedUser.profilePic,
+      isApproved: updatedUser.isApproved,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getUserProfile, updateUserProfile };

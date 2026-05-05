@@ -6,8 +6,9 @@ const availabilitySchema = new mongoose.Schema({
     enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
     required: true,
   },
-  startTime: { type: String, required: true }, // e.g. "09:00"
-  endTime: { type: String, required: true },   // e.g. "17:00"
+  startTime: { type: String }, // legacy support
+  endTime: { type: String },   // legacy support
+  slots: [{ type: String }],
   isAvailable: { type: Boolean, default: true },
 });
 

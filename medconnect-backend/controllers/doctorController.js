@@ -61,7 +61,7 @@ const getDoctorProfile = async (req, res) => {
 // @access  Public
 const getAllDoctors = async (req, res) => {
   try {
-    const { specialization, minFee, maxFee, minRating } = req.query;
+    const { specialization, minFee, maxFee, minRating, location } = req.query;
 
     const filter = { isApproved: true };
     if (specialization) filter.specialization = new RegExp(specialization, 'i');
@@ -71,9 +71,10 @@ const getAllDoctors = async (req, res) => {
       if (maxFee) filter.consultationFee.$lte = Number(maxFee);
     }
     if (minRating) filter.rating = { $gte: Number(minRating) };
+    if (location) filter.clinicAddress = new RegExp(location, 'i');
 
     const doctors = await Doctor.find(filter)
-      .populate('user', 'name email phone profilePic')
+      .populate('user', 'name email phone profilePic address')
       .sort({ rating: -1 });
 
     res.json(doctors);

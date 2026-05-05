@@ -4,9 +4,11 @@ const {
   createOrder,
   verifyPayment,
   getPaymentStatus,
+  getPaymentConfig,
 } = require('../controllers/paymentController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
+router.get('/config', protect, getPaymentConfig);
 router.post('/create-order', protect, authorize('patient'), createOrder);
 router.post('/verify', protect, authorize('patient'), verifyPayment);
 router.get('/:appointmentId', protect, getPaymentStatus);
