@@ -1,4 +1,3 @@
-import DashboardLayout from '../../components/DashboardLayout'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
@@ -12,8 +11,18 @@ const HomePage = () => {
   const { doctors, loading } = useSelector((state) => state.doctor)
   const [symptoms, setSymptoms] = useState('')
 
+  // Responsive States
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   useEffect(() => {
     dispatch(getAllDoctors())
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [dispatch])
 
   const handleLogout = () => {
@@ -42,10 +51,10 @@ const HomePage = () => {
   ]
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif", background: '#f0f4fa', minHeight: '100vh' }}>
+    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#f0f4fa', minHeight: '100vh' }}>
 
       {/* Top Info Bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
+      <div className="mobile-hide" style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
           <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -68,7 +77,7 @@ const HomePage = () => {
       <nav style={{ background: '#1565c0', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 2px 12px rgba(21,101,192,0.18)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navigate('/home')}>
             <div style={{ width: 38, height: 38, background: '#fff', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
                 <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" fill="#1565c0"/>
@@ -78,42 +87,78 @@ const HomePage = () => {
           </div>
 
           {/* Nav Links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {['Doctors', 'Appointments', 'Profile'].map(item => (
+          {isMobile ? (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.6rem', cursor: 'pointer', padding: '8px' }}
+            >
+              ☰
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {['Doctors', 'Appointments', 'Reviews', 'Profile'].map(item => (
+                <button
+                  key={item}
+                  onClick={() => navigate(`/${item.toLowerCase()}`)}
+                  style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
+                  onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+                >
+                  {item}
+                </button>
+              ))}
+              <button
+                onClick={() => navigate('/doctors')}
+                style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 13, padding: '9px 20px', borderRadius: 8, cursor: 'pointer', border: 'none', marginLeft: 8, transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.target.style.background = '#e3f2fd' }}
+                onMouseLeave={e => { e.target.style.background = '#fff' }}
+              >
+                Get Appointment
+              </button>
+              <button
+                onClick={handleLogout}
+                style={{ background: 'rgba(255,255,255,0.1)', color: '#ffcdd2', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)', marginLeft: 4, transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.target.style.background = 'rgba(244,67,54,0.25)'; e.target.style.color = '#fff' }}
+                onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#ffcdd2' }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Dropdown Menu Panel */}
+        {isMobile && mobileMenuOpen && (
+          <div style={{ background: '#1565c0', padding: '12px 24px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            {['Doctors', 'Appointments', 'Reviews', 'Profile'].map(item => (
               <button
                 key={item}
-                onClick={() => navigate(`/${item.toLowerCase()}`)}
-                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
-                onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+                onClick={() => { navigate(`/${item.toLowerCase()}`); setMobileMenuOpen(false); }}
+                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 15, padding: '10px 0', cursor: 'pointer', textAlign: 'left', width: '100%' }}
               >
                 {item}
               </button>
             ))}
             <button
-              onClick={() => navigate('/doctors')}
-              style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 13, padding: '9px 20px', borderRadius: 8, cursor: 'pointer', border: 'none', marginLeft: 8, transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.target.style.background = '#e3f2fd' }}
-              onMouseLeave={e => { e.target.style.background = '#fff' }}
+              onClick={() => { navigate('/doctors'); setMobileMenuOpen(false); }}
+              style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 14, padding: '10px', borderRadius: 8, cursor: 'pointer', border: 'none', width: '100%', margin: '4px 0', textAlign: 'center' }}
             >
               Get Appointment
             </button>
             <button
               onClick={handleLogout}
-              style={{ background: 'rgba(255,255,255,0.1)', color: '#ffcdd2', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)', marginLeft: 4, transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.target.style.background = 'rgba(244,67,54,0.25)'; e.target.style.color = '#fff' }}
-              onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#ffcdd2' }}
+              style={{ background: 'rgba(255,255,255,0.1)', color: '#ffcdd2', fontWeight: 600, fontSize: 14, padding: '10px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)', width: '100%', textAlign: 'center' }}
             >
               Logout
             </button>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Hero Section */}
       <div style={{
         background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #0d47a1 100%)',
-        padding: '80px 0 100px',
+        padding: isMobile ? '48px 0 60px' : '80px 0 100px',
         position: 'relative',
         overflow: 'hidden'
       }}>
@@ -123,21 +168,21 @@ const HomePage = () => {
         <div style={{ position: 'absolute', top: 20, left: '60%', width: 150, height: 150, borderRadius: '50%', background: 'rgba(144,202,249,0.1)' }} />
 
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+          <div className="responsive-hero-grid">
             {/* Left Content */}
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(144,202,249,0.15)', border: '1px solid rgba(144,202,249,0.3)', borderRadius: 20, padding: '6px 16px', marginBottom: 20 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4fc3f7', animation: 'pulse 2s infinite' }} />
                 <span style={{ color: '#90caf9', fontSize: 13, fontWeight: 600 }}>Medical & Health Services</span>
               </div>
-              <h1 style={{ color: '#fff', fontSize: 46, fontWeight: 800, lineHeight: 1.15, marginBottom: 16, letterSpacing: '-1px' }}>
+              <h1 style={{ color: '#fff', fontSize: isMobile ? 32 : 46, fontWeight: 800, lineHeight: 1.15, marginBottom: 16, letterSpacing: '-1px' }}>
                 Welcome back,<br />
                 <span style={{ color: '#90caf9' }}>{user?.name || 'Patient'}</span> 👋
               </h1>
               <p style={{ color: '#bbdefb', fontSize: 16, lineHeight: 1.7, marginBottom: 32, maxWidth: 420 }}>
                 A professional and friendly care provider — let's find the right specialist for your health needs today.
               </p>
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 12, justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap', width: '100%' }}>
                 <button
                   onClick={() => navigate('/doctors')}
                   style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 15, padding: '14px 28px', borderRadius: 10, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
@@ -158,7 +203,7 @@ const HomePage = () => {
             </div>
 
             {/* Right: Stats Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="responsive-grid-2" style={{ width: '100%' }}>
               {[
                 { value: '500+', label: 'Expert Doctors', icon: '👨‍⚕️' },
                 { value: '98%', label: 'Patient Satisfaction', icon: '⭐' },
@@ -177,9 +222,9 @@ const HomePage = () => {
       </div>
 
       {/* AI Symptom Checker - Floating over hero */}
-      <div style={{ maxWidth: 1200, margin: '-40px auto 0', padding: '0 24px', position: 'relative', zIndex: 10 }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: '28px 32px', boxShadow: '0 8px 40px rgba(21,101,192,0.12)', border: '1px solid #e3f2fd' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+      <div style={{ maxWidth: 1200, margin: isMobile ? '20px auto 0' : '-40px auto 0', padding: '0 24px', position: 'relative', zIndex: 10 }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: isMobile ? '20px 16px' : '28px 32px', boxShadow: '0 8px 40px rgba(21,101,192,0.12)', border: '1px solid #e3f2fd' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 200 }}>
               <div style={{ width: 44, height: 44, background: 'linear-gradient(135deg, #1565c0, #42a5f5)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🤖</div>
               <div>
@@ -187,7 +232,7 @@ const HomePage = () => {
                 <p style={{ color: '#90a4ae', fontSize: 12, margin: 0, marginTop: 2 }}>Describe your symptoms for instant guidance</p>
               </div>
             </div>
-            <div style={{ flex: 1, display: 'flex', gap: 12 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12 }}>
               <input
                 type="text"
                 value={symptoms}
@@ -222,7 +267,7 @@ const HomePage = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
             <div>
               <p style={{ color: '#1565c0', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.2, margin: 0, marginBottom: 6 }}>Our Departments</p>
-              <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: 26, margin: 0 }}>Browse by Specialization</h2>
+              <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: isMobile ? 20 : 26, margin: 0 }}>Browse by Specialization</h2>
             </div>
             <button
               onClick={() => navigate('/doctors')}
@@ -230,11 +275,11 @@ const HomePage = () => {
               onMouseEnter={e => { e.currentTarget.style.background = '#1565c0'; e.currentTarget.style.color = '#fff' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#1565c0' }}
             >
-              View All →
+              View All
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16 }}>
+          <div className="responsive-grid-6">
             {specializations.map((spec) => (
               <button
                 key={spec.label}
@@ -251,7 +296,7 @@ const HomePage = () => {
         </div>
 
         {/* Why Choose Us - Feature Strip */}
-        <div style={{ background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)', borderRadius: 20, padding: '40px', marginBottom: 56, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32 }}>
+        <div className="responsive-grid-4" style={{ background: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)', borderRadius: 20, padding: isMobile ? '24px' : '40px', marginBottom: 56, gap: isMobile ? '20px' : '32px' }}>
           {[
             { icon: '🏆', title: 'Expert Doctors', desc: 'Board-certified specialists across all fields' },
             { icon: '⚡', title: 'Fast Booking', desc: 'Book appointments in under 60 seconds' },
@@ -271,7 +316,7 @@ const HomePage = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
             <div>
               <p style={{ color: '#1565c0', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.2, margin: 0, marginBottom: 6 }}>Our Team</p>
-              <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: 26, margin: 0 }}>Top Rated Specialists</h2>
+              <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: isMobile ? 20 : 26, margin: 0 }}>Top Rated Specialists</h2>
             </div>
             <button
               onClick={() => navigate('/doctors')}
@@ -279,7 +324,7 @@ const HomePage = () => {
               onMouseEnter={e => { e.currentTarget.style.background = '#1565c0'; e.currentTarget.style.color = '#fff' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#1565c0' }}
             >
-              View All Doctors →
+              View All
             </button>
           </div>
 
@@ -289,7 +334,7 @@ const HomePage = () => {
               <span style={{ color: '#90a4ae', fontSize: 14 }}>Loading doctors...</span>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+            <div className="responsive-grid-3">
               {doctors.slice(0, 3).map((doctor) => (
                 <div
                   key={doctor._id}
@@ -339,7 +384,7 @@ const HomePage = () => {
 
       {/* Footer Strip */}
       <div style={{ background: '#1a2744', marginTop: 48, padding: '24px 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 0, alignItems: 'center', justifyContent: 'space-between', textAlign: isMobile ? 'center' : 'left' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, background: '#1565c0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ color: '#fff', fontSize: 16 }}>❤️</span>

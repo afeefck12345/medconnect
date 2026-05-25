@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import API from '../api/axios'
@@ -37,7 +37,7 @@ const VideoConsultationRoom = () => {
   const [appointment, setAppointment]           = useState(null)
   const [gateMessage, setGateMessage]           = useState('')
 
-  const initJitsi = () => {
+  const initJitsi = useCallback(() => {
     if (!window.JitsiMeetExternalAPI) { setStatus('error'); return }
     const options = {
       roomName,
@@ -70,7 +70,7 @@ const VideoConsultationRoom = () => {
       jitsiApi.current.addEventListener('audioMuteStatusChanged', ({ muted }) => setIsMuted(muted))
       jitsiApi.current.addEventListener('videoMuteStatusChanged', ({ muted }) => setIsVideoOff(muted))
     } catch { setStatus('error') }
-  }
+  }, [roomName, user?.email, user?.name])
 
   useEffect(() => {
     const validateAndLoadAppointment = async () => {
@@ -123,7 +123,7 @@ const VideoConsultationRoom = () => {
       document.body.removeChild(script)
       if (jitsiApi.current) jitsiApi.current.dispose()
     }
-  }, [status])
+  }, [initJitsi, status])
 
   useEffect(() => {
     let timer

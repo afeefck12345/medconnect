@@ -28,7 +28,8 @@ const registerUser = async (req, res) => {
           specialization: 'General Physician', // Default placeholder
           experience: 0,
           consultationFee: 500,     // Default starting fee
-          isApproved: true,         // Set to true so they are visible immediately
+          isApproved: false,
+          approvalStatus: 'pending',
         });
       }
 

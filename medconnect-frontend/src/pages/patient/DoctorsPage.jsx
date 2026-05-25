@@ -25,15 +25,19 @@ const DoctorsPage = () => {
     location.state?.suggestedSpecialty || 'All'
   )
 
-  useEffect(() => {
-    dispatch(getAllDoctors())
-  }, [dispatch])
+  // Responsive States
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    if (location.state?.suggestedSpecialty) {
-      setSelectedSpec(location.state.suggestedSpecialty)
+    dispatch(getAllDoctors())
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024)
     }
-  }, [location.state])
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [dispatch])
 
   const filtered = (Array.isArray(doctors) ? doctors : []).filter((doc) => {
     const doctorName = doc.user?.name || ''
@@ -46,7 +50,7 @@ const DoctorsPage = () => {
     <div style={{ fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif", background: '#f0f4fa', minHeight: '100vh' }}>
 
       {/* Top Info Bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
+      <div className="mobile-hide" style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
           <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -76,24 +80,53 @@ const DoctorsPage = () => {
             </div>
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>Med<span style={{ color: '#90caf9' }}>Connect</span></span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {isMobile ? (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.6rem', cursor: 'pointer', padding: '8px' }}
+            >
+              ☰
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {['Home', 'Appointments', 'Profile'].map(item => (
+                <button
+                  key={item}
+                  onClick={() => navigate(`/${item === 'Home' ? 'home' : item.toLowerCase()}`)}
+                  style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}
+                  onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
+                  onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+                >{item}</button>
+              ))}
+              <button
+                onClick={() => navigate('/doctors')}
+                style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 13, padding: '9px 20px', borderRadius: 8, cursor: 'pointer', border: 'none', marginLeft: 8 }}
+              >
+                Get Appointment
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Mobile Dropdown Panel */}
+        {isMobile && mobileMenuOpen && (
+          <div style={{ background: '#1565c0', padding: '12px 24px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             {['Home', 'Appointments', 'Profile'].map(item => (
               <button
                 key={item}
-                onClick={() => navigate(`/${item.toLowerCase()}`)}
-                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}
-                onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
-                onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
-              >{item}</button>
+                onClick={() => { navigate(`/${item === 'Home' ? 'home' : item.toLowerCase()}`); setMobileMenuOpen(false); }}
+                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 15, padding: '10px 0', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+              >
+                {item}
+              </button>
             ))}
             <button
-              onClick={() => navigate('/doctors')}
-              style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 13, padding: '9px 20px', borderRadius: 8, cursor: 'pointer', border: 'none', marginLeft: 8 }}
+              onClick={() => { navigate('/doctors'); setMobileMenuOpen(false); }}
+              style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 14, padding: '10px', borderRadius: 8, cursor: 'pointer', border: 'none', width: '100%', margin: '4px 0', textAlign: 'center' }}
             >
               Get Appointment
             </button>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Page Hero */}
@@ -191,7 +224,7 @@ const DoctorsPage = () => {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <div className="responsive-grid-3">
             {filtered.map((doctor) => (
               <div
                 key={doctor._id}
@@ -243,7 +276,7 @@ const DoctorsPage = () => {
 
       {/* Footer Strip */}
       <div style={{ background: '#1a2744', marginTop: 48, padding: '24px 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? 16 : 0, textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, background: '#1565c0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ color: '#fff', fontSize: 16 }}>❤️</span>

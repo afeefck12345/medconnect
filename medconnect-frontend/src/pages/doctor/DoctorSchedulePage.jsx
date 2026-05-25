@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../../features/auth/authSlice'
 import API from '../../api/axios'
@@ -14,7 +14,6 @@ const TIME_SLOTS = [
 const DoctorSchedulePage = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const { user } = useSelector((state) => state.auth)
 
   const [schedule, setSchedule] = useState(
     DAYS.reduce((acc, day) => ({ ...acc, [day]: [] }), {})
@@ -35,7 +34,7 @@ const DoctorSchedulePage = () => {
           }, {})
           setSchedule(formattedSchedule)
         }
-      } catch (err) {
+      } catch {
         console.error('Could not fetch schedule, using defaults')
       }
     }
@@ -76,10 +75,10 @@ const DoctorSchedulePage = () => {
         slots: schedule[day],
         isAvailable: schedule[day].length > 0,
       }))
-      await API.post('/doctors/profile', { availability: availabilityArray })
+      await API.put('/doctors/availability', { availability: availabilityArray })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-    } catch (err) {
+    } catch {
       setError('Failed to save schedule. Check backend routes.')
     } finally {
       setSaving(false)

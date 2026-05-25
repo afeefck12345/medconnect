@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { getMyAppointments } from '../../features/appointment/appointmentSlice'
+import { getDoctorAppointments } from '../../features/appointment/appointmentSlice'
 import { logout } from '../../features/auth/authSlice'
 import API from '../../api/axios'
 
@@ -20,7 +20,7 @@ const DoctorAppointmentsPage = () => {
   const [actionLoading, setActionLoading] = useState(null)
 
   useEffect(() => {
-    dispatch(getMyAppointments())
+    dispatch(getDoctorAppointments())
   }, [dispatch])
 
   const handleLogout = () => {
@@ -32,7 +32,7 @@ const DoctorAppointmentsPage = () => {
     setActionLoading(id)
     try {
       await API.put(`/appointments/${id}/status`, { status })
-      await dispatch(getMyAppointments())
+      await dispatch(getDoctorAppointments())
     } catch (err) {
       alert(err.response?.data?.message || 'Could not update status.')
     } finally {
@@ -292,10 +292,10 @@ const DoctorAppointmentsPage = () => {
                     </div>
 
                     {/* Reason */}
-                    {apt.reason && (
+                    {apt.symptoms && (
                       <div style={{ marginTop: 16, padding: '12px 16px', background: '#f8faff', borderRadius: 10, borderLeft: '3px solid #1565c0' }}>
                         <p style={{ color: '#546e7a', fontSize: 13, margin: 0, fontStyle: 'italic', lineHeight: 1.6 }}>
-                          "{apt.reason}"
+                          "{apt.symptoms}"
                         </p>
                       </div>
                     )}

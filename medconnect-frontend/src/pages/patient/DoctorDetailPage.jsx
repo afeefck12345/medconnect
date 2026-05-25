@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getDoctorById } from '../../features/doctor/doctorSlice'
@@ -9,8 +9,18 @@ const DoctorDetailPage = () => {
   const navigate = useNavigate()
   const { selectedDoctor: doctor, loading } = useSelector((state) => state.doctor)
 
+  // Responsive States
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   useEffect(() => {
     dispatch(getDoctorById(id))
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [dispatch, id])
 
   if (loading) return (
@@ -37,57 +47,78 @@ const DoctorDetailPage = () => {
     <div style={{ fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif", background: '#f0f4fa', minHeight: '100vh' }}>
 
       {/* Top Info Bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
-          <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-              24/7 Emergency Care Available
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              support@medconnect.com
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.09 1.18 2 2 0 012.07 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.36-.36a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-            +1 800 MED-CONNECT
+      {!isMobile && (
+        <div style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
+            <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                24/7 Emergency Care Available
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                support@medconnect.com
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.09 1.18 2 2 0 012.07 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.36-.36a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              +1 800 MED-CONNECT
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Navbar */}
       <nav style={{ background: '#1565c0', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 2px 12px rgba(21,101,192,0.18)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
             <button
               onClick={() => navigate('/doctors')}
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontWeight: 600, fontSize: 13, padding: '7px 16px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontWeight: 600, fontSize: isMobile ? 12 : 13, padding: isMobile ? '6px 12px' : '7px 16px', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
             >
               ← Back
             </button>
             <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.2)' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navigate('/home')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => navigate('/home')}>
               <div style={{ width: 34, height: 34, background: '#fff', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
                   <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" fill="#1565c0"/>
                 </svg>
               </div>
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>Med<span style={{ color: '#90caf9' }}>Connect</span></span>
+              {!isMobile && <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>Med<span style={{ color: '#90caf9' }}>Connect</span></span>}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {isMobile ? (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.6rem', cursor: 'pointer', padding: '8px' }}
+            >
+              ☰
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {['Home', 'Doctors', 'Appointments', 'Profile'].map(item => (
+                <button key={item} onClick={() => navigate(`/${item === 'Home' ? 'home' : item.toLowerCase()}`)}
+                  style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 14px', borderRadius: 6, cursor: 'pointer' }}
+                  onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
+                  onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+                >{item}</button>
+              ))}
+            </div>
+          )}
+        </div>
+        {/* Mobile Dropdown Panel */}
+        {isMobile && mobileMenuOpen && (
+          <div style={{ background: '#1565c0', padding: '12px 24px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             {['Home', 'Doctors', 'Appointments', 'Profile'].map(item => (
-              <button key={item} onClick={() => navigate(`/${item.toLowerCase()}`)}
-                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 14px', borderRadius: 6, cursor: 'pointer' }}
-                onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
-                onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+              <button key={item} onClick={() => { navigate(`/${item === 'Home' ? 'home' : item.toLowerCase()}`); setMobileMenuOpen(false); }}
+                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 15, padding: '10px 0', cursor: 'pointer', textAlign: 'left', width: '100%' }}
               >{item}</button>
             ))}
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Page Hero */}
@@ -111,7 +142,7 @@ const DoctorDetailPage = () => {
 
       {/* Main Content — floats over hero */}
       <div style={{ maxWidth: 1100, margin: '-40px auto 0', padding: '0 24px 60px', position: 'relative', zIndex: 5 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '300px 1fr', gap: 24, alignItems: 'start' }}>
 
           {/* Left — Profile Card */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -145,7 +176,7 @@ const DoctorDetailPage = () => {
               <div style={{ padding: '16px 24px', borderTop: '1px solid #e8edf5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <p style={{ color: '#90a4ae', fontSize: 11, margin: '0 0 2px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8 }}>Consultation Fee</p>
-                  <p style={{ color: '#1565c0', fontWeight: 800, fontSize: 22, margin: 0 }}>₹{doctor.fee || '500'}</p>
+                  <p style={{ color: '#1565c0', fontWeight: 800, fontSize: 22, margin: 0 }}>₹{doctor.consultationFee || '500'}</p>
                 </div>
                 <div style={{ background: '#e8f5e9', borderRadius: 10, padding: '8px 12px', textAlign: 'center' }}>
                   <span style={{ fontSize: 20 }}>💊</span>
@@ -218,7 +249,7 @@ const DoctorDetailPage = () => {
                 <div style={{ width: 36, height: 36, background: '#e3f2fd', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>✅</div>
                 <h3 style={{ color: '#1a2744', fontWeight: 700, fontSize: 16, margin: 0 }}>What to Expect</h3>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
                 {[
                   { icon: '🔍', text: 'Thorough diagnosis & examination' },
                   { icon: '💬', text: 'Personalized consultation' },
@@ -269,7 +300,7 @@ const DoctorDetailPage = () => {
 
       {/* Footer */}
       <div style={{ background: '#1a2744', padding: '24px 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? 16 : 0, textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, background: '#1565c0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ color: '#fff', fontSize: 16 }}>❤️</span>

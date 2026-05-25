@@ -37,10 +37,9 @@ export const getUserProfile = createAsyncThunk('auth/profile', async (_, { rejec
   }
 })
 
-// NEW: Update User Profile (Fixes "No Save API Call" Critical Issue)
 export const updateUserProfile = createAsyncThunk('auth/updateProfile', async (userData, { rejectWithValue }) => {
   try {
-    const { data } = await API.put('/users/profile', userData) // Ensure backend route matches
+    const { data } = await API.put('/auth/profile', userData)
     return data
   } catch (err) {
     return rejectWithValue(err.response?.data?.message || 'Update failed')
@@ -96,10 +95,10 @@ const authSlice = createSlice({
         state.token = null 
       })
 
-      // Update Profile Success
-      .addCase(updateUserProfile.fulfilled, (state, action) => {
-        state.user = action.payload
-      })
+      // Update Profile
+      .addCase(updateUserProfile.pending,   (state)         => { state.loading = true; state.error = null })
+      .addCase(updateUserProfile.fulfilled, (state, action) => { state.loading = false; state.user = action.payload })
+      .addCase(updateUserProfile.rejected,  (state, action) => { state.loading = false; state.error = action.payload })
   },
 })
 

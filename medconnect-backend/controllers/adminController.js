@@ -2,6 +2,45 @@ const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const Appointment = require('../models/Appointment');
 const Review = require('../models/Review');
+const Prescription = require('../models/Prescription');
+const Notification = require('../models/Notification');
+
+const getDoctorApprovalStatus = (doctor) => {
+  if (doctor.approvalStatus) return doctor.approvalStatus;
+  return doctor.isApproved ? 'approved' : 'pending';
+};
+
+const normalizeDoctorForAdmin = (doctorDoc) => {
+  const doctor = typeof doctorDoc.toObject === 'function' ? doctorDoc.toObject() : doctorDoc;
+  const user = doctor.user || {};
+
+  return {
+    ...doctor,
+    name: user.name || '',
+    email: user.email || '',
+    phone: user.phone || '',
+    profilePic: user.profilePic || '',
+    fee: doctor.consultationFee,
+    status: getDoctorApprovalStatus(doctor),
+  };
+};
+
+const normalizeAppointmentForAdmin = (appointmentDoc) => {
+  const appointment = typeof appointmentDoc.toObject === 'function' ? appointmentDoc.toObject() : appointmentDoc;
+  const doctorUser = appointment.doctor?.user || {};
+
+  return {
+    ...appointment,
+    reason: appointment.symptoms || appointment.notes || '',
+    doctor: appointment.doctor
+      ? {
+          ...appointment.doctor,
+          name: doctorUser.name || '',
+          email: doctorUser.email || '',
+        }
+      : appointment.doctor,
+  };
+};
 
 // @desc    Get all users
 // @route   GET /api/admin/users
@@ -24,6 +63,32 @@ const deleteUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    if (user.role === 'admin') {
+      return res.status(400).json({ message: 'Admin users cannot be deleted from this panel' });
+    }
+
+    if (user.role === 'doctor') {
+      const doctor = await Doctor.findOne({ user: user._id });
+      if (doctor) {
+        await Promise.all([
+          Appointment.deleteMany({ doctor: doctor._id }),
+          Review.deleteMany({ doctor: doctor._id }),
+          Prescription.deleteMany({ doctor: doctor._id }),
+          doctor.deleteOne(),
+        ]);
+      }
+    }
+
+    if (user.role === 'patient') {
+      await Promise.all([
+        Appointment.deleteMany({ patient: user._id }),
+        Review.deleteMany({ patient: user._id }),
+        Prescription.deleteMany({ patient: user._id }),
+      ]);
+    }
+
+    await Notification.deleteMany({ recipient: user._id });
     await user.deleteOne();
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
@@ -39,7 +104,7 @@ const getAllDoctors = async (req, res) => {
     const doctors = await Doctor.find()
       .populate('user', 'name email phone profilePic')
       .sort({ createdAt: -1 });
-    res.json(doctors);
+    res.json(doctors.map(normalizeDoctorForAdmin));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -56,9 +121,13 @@ const approveDoctor = async (req, res) => {
     }
 
     doctor.isApproved = true;
+    doctor.approvalStatus = 'approved';
     await doctor.save();
+    await User.findByIdAndUpdate(doctor.user, { isApproved: true });
 
-    res.json({ message: 'Doctor approved successfully', doctor });
+    await doctor.populate('user', 'name email phone profilePic');
+
+    res.json({ message: 'Doctor approved successfully', doctor: normalizeDoctorForAdmin(doctor) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -75,9 +144,13 @@ const rejectDoctor = async (req, res) => {
     }
 
     doctor.isApproved = false;
+    doctor.approvalStatus = 'rejected';
     await doctor.save();
+    await User.findByIdAndUpdate(doctor.user, { isApproved: false });
 
-    res.json({ message: 'Doctor rejected', doctor });
+    await doctor.populate('user', 'name email phone profilePic');
+
+    res.json({ message: 'Doctor rejected', doctor: normalizeDoctorForAdmin(doctor) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -90,8 +163,13 @@ const getAnalytics = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments({ role: 'patient' });
     const totalDoctors = await Doctor.countDocuments();
-    const approvedDoctors = await Doctor.countDocuments({ isApproved: true });
-    const pendingDoctors = await Doctor.countDocuments({ isApproved: false });
+    const approvedDoctors = await Doctor.countDocuments({
+      $or: [{ approvalStatus: 'approved' }, { isApproved: true }],
+    });
+    const pendingDoctors = await Doctor.countDocuments({
+      isApproved: false,
+      $or: [{ approvalStatus: 'pending' }, { approvalStatus: { $exists: false } }],
+    });
     const totalAppointments = await Appointment.countDocuments();
     const completedAppointments = await Appointment.countDocuments({ status: 'completed' });
     const cancelledAppointments = await Appointment.countDocuments({ status: 'cancelled' });
@@ -179,7 +257,7 @@ const getAllAppointments = async (req, res) => {
       .populate({ path: 'doctor', populate: { path: 'user', select: 'name email' } })
       .sort({ createdAt: -1 });
 
-    res.json(appointments);
+    res.json(appointments.map(normalizeAppointmentForAdmin));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

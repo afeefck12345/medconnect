@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { getMyAppointments } from '../../features/appointment/appointmentSlice'
+import { getDoctorAppointments } from '../../features/appointment/appointmentSlice'
 import { logout } from '../../features/auth/authSlice'
 import API from '../../api/axios'
 
@@ -44,7 +44,7 @@ const DoctorPrescriptionsPage = () => {
   })
 
   useEffect(() => {
-    dispatch(getMyAppointments())
+    dispatch(getDoctorAppointments())
     fetchPrescriptions()
   }, [dispatch])
 

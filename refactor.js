@@ -90,3 +90,4 @@ traverseDir(path.join(srcDir, 'doctor'), 'doctor');
 traverseDir(path.join(srcDir, 'admin'), 'admin');
 
 console.log('Done processing pages.');
+

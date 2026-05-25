@@ -1,8 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { logout } from '../../features/auth/authSlice'
-import { getMyAppointments } from '../../features/appointment/appointmentSlice'
+import { getDoctorAppointments } from '../../features/appointment/appointmentSlice'
 
 const statusConfig = {
   pending:   { bg: '#fff8e1', color: '#f59e0b', label: 'Pending' },
@@ -25,8 +25,18 @@ const DoctorDashboard = () => {
   const { user } = useSelector((state) => state.auth)
   const { appointments, loading } = useSelector((state) => state.appointment)
 
+  // Responsive States
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   useEffect(() => {
-    dispatch(getMyAppointments())
+    dispatch(getDoctorAppointments())
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [dispatch])
 
   const handleLogout = () => {
@@ -54,10 +64,10 @@ const DoctorDashboard = () => {
   ]
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif", background: '#f0f4fa', minHeight: '100vh' }}>
+    <div style={{ fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", background: '#f0f4fa', minHeight: '100vh' }}>
 
       {/* Top Info Bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
+      <div className="mobile-hide" style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
           <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -65,8 +75,7 @@ const DoctorDashboard = () => {
               24/7 Emergency Care Available
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              support@medconnect.com
+              <svg width="14" height="14" fill="none" stroke="#1565c0" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> support@medconnect.com
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -91,34 +100,64 @@ const DoctorDashboard = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {isMobile ? (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.6rem', cursor: 'pointer', padding: '8px' }}
+            >
+              {mobileMenuOpen ? '✕' : '☰'}
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {navLinks.map((link) => (
+                <button
+                  key={link.path}
+                  onClick={() => navigate(link.path)}
+                  style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
+                  onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+                >
+                  {link.label}
+                </button>
+              ))}
+              <button
+                onClick={handleLogout}
+                style={{ background: 'rgba(255,255,255,0.1)', color: '#ffcdd2', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)', marginLeft: 8, transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.target.style.background = 'rgba(244,67,54,0.25)'; e.target.style.color = '#fff' }}
+                onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#ffcdd2' }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        {isMobile && mobileMenuOpen && (
+          <div style={{ background: '#1565c0', padding: '12px 24px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             {navLinks.map((link) => (
               <button
                 key={link.path}
-                onClick={() => navigate(link.path)}
-                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
-                onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+                onClick={() => { navigate(link.path); setMobileMenuOpen(false); }}
+                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 15, padding: '10px 0', cursor: 'pointer', textAlign: 'left', width: '100%' }}
               >
                 {link.label}
               </button>
             ))}
             <button
               onClick={handleLogout}
-              style={{ background: 'rgba(255,255,255,0.1)', color: '#ffcdd2', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)', marginLeft: 8, transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.target.style.background = 'rgba(244,67,54,0.25)'; e.target.style.color = '#fff' }}
-              onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#ffcdd2' }}
+              style={{ background: 'rgba(255,255,255,0.1)', color: '#ffcdd2', fontWeight: 600, fontSize: 14, padding: '10px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)', width: '100%', textAlign: 'center', marginTop: 4 }}
             >
               Logout
             </button>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Hero */}
       <div style={{
         background: 'linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #0d47a1 100%)',
-        padding: '60px 0 80px',
+        padding: isMobile ? '40px 0 60px' : '60px 0 80px',
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -127,21 +166,21 @@ const DoctorDashboard = () => {
         <div style={{ position: 'absolute', top: 20, left: '60%', width: 150, height: 150, borderRadius: '50%', background: 'rgba(144,202,249,0.1)' }} />
 
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
+          <div className="responsive-hero-grid" style={{ gap: isMobile ? 32 : 48 }}>
             {/* Left */}
             <div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(144,202,249,0.15)', border: '1px solid rgba(144,202,249,0.3)', borderRadius: 20, padding: '6px 16px', marginBottom: 20 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4fc3f7', animation: 'pulse 2s infinite' }} />
                 <span style={{ color: '#90caf9', fontSize: 13, fontWeight: 600 }}>Doctor Portal</span>
               </div>
-              <h1 style={{ color: '#fff', fontSize: 42, fontWeight: 800, lineHeight: 1.15, marginBottom: 12, letterSpacing: '-1px' }}>
+              <h1 style={{ color: '#fff', fontSize: isMobile ? 32 : 42, fontWeight: 800, lineHeight: 1.15, marginBottom: 12, letterSpacing: '-1px' }}>
                 Welcome back,<br />
                 <span style={{ color: '#90caf9' }}>Dr. {user?.name || 'Doctor'}</span> 👋
               </h1>
               <p style={{ color: '#bbdefb', fontSize: 15, lineHeight: 1.7, marginBottom: 32, maxWidth: 420 }}>
                 {user?.specialization || 'Professional Specialist'} &nbsp;·&nbsp; {user?.experience || 0} years experience
               </p>
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 12, justifyContent: isMobile ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => navigate('/doctor/appointments')}
                   style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 15, padding: '14px 28px', borderRadius: 10, border: 'none', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
@@ -162,7 +201,7 @@ const DoctorDashboard = () => {
             </div>
 
             {/* Right: stat cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="responsive-grid-2" style={{ width: '100%' }}>
               {stats.map((stat, i) => (
                 <div key={i} style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 16, padding: '24px 20px', textAlign: 'center' }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{stat.icon}</div>
@@ -176,18 +215,18 @@ const DoctorDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px 64px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '24px 16px 48px' : '48px 24px 64px' }}>
 
         {/* Recent Appointments */}
         <div style={{ marginBottom: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
             <div>
               <p style={{ color: '#1565c0', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.2, margin: 0, marginBottom: 6 }}>Overview</p>
-              <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: 26, margin: 0 }}>Recent Appointments</h2>
+              <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: isMobile ? 22 : 26, margin: 0 }}>Recent Appointments</h2>
             </div>
             <button
               onClick={() => navigate('/doctor/appointments')}
-              style={{ background: 'transparent', border: '1.5px solid #1565c0', color: '#1565c0', fontWeight: 600, fontSize: 13, padding: '8px 20px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s' }}
+              style={{ background: 'transparent', border: '1.5px solid #1565c0', color: '#1565c0', fontWeight: 600, fontSize: 13, padding: '8px 20px', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', width: isMobile ? '100%' : 'auto', textAlign: 'center' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#1565c0'; e.currentTarget.style.color = '#fff' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#1565c0' }}
             >
@@ -212,7 +251,7 @@ const DoctorDashboard = () => {
                 return (
                   <div
                     key={apt._id}
-                    style={{ background: '#fff', border: '1.5px solid #e8edf5', borderRadius: 16, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, transition: 'all 0.25s', boxShadow: '0 2px 8px rgba(21,101,192,0.04)', cursor: 'default' }}
+                    style={{ background: '#fff', border: '1.5px solid #e8edf5', borderRadius: 16, padding: isMobile ? '16px' : '16px 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: 16, transition: 'all 0.25s', boxShadow: '0 2px 8px rgba(21,101,192,0.04)', cursor: 'default' }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor = '#1565c0'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(21,101,192,0.12)' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8edf5'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(21,101,192,0.04)' }}
                   >
@@ -222,15 +261,15 @@ const DoctorDashboard = () => {
                       </div>
                       <div>
                         <p style={{ color: '#1a2744', fontWeight: 700, fontSize: 15, margin: 0 }}>{apt.patient?.name || 'Patient'}</p>
-                        <div style={{ display: 'flex', gap: 14, marginTop: 4 }}>
+                        <div style={{ display: 'flex', gap: 14, marginTop: 4, flexWrap: 'wrap' }}>
                           <span style={{ color: '#90a4ae', fontSize: 12 }}>📅 {new Date(apt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                           <span style={{ color: '#90a4ae', fontSize: 12 }}>🕐 {apt.timeSlot}</span>
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      {apt.reason && (
-                        <p style={{ color: '#90a4ae', fontSize: 12, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{apt.reason}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'space-between' : 'flex-end', gap: 16, borderTop: isMobile ? '1px solid #f0f4fa' : 'none', paddingTop: isMobile ? 12 : 0 }}>
+                      {apt.symptoms && (
+                        <p style={{ color: '#90a4ae', fontSize: 12, maxWidth: isMobile ? '60%' : 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{apt.symptoms}</p>
                       )}
                       <span style={{ background: sc.bg, color: sc.color, fontWeight: 700, fontSize: 11, padding: '4px 12px', borderRadius: 20, textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
                         {sc.label}
@@ -247,9 +286,9 @@ const DoctorDashboard = () => {
         <div>
           <div style={{ marginBottom: 28 }}>
             <p style={{ color: '#1565c0', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1.2, margin: 0, marginBottom: 6 }}>Navigate</p>
-            <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: 26, margin: 0 }}>Quick Actions</h2>
+            <h2 style={{ color: '#1a2744', fontWeight: 800, fontSize: isMobile ? 22 : 26, margin: 0 }}>Quick Actions</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          <div className="responsive-grid-4" style={{ gap: 16 }}>
             {quickActions.map((action) => (
               <button
                 key={action.label}
@@ -268,7 +307,7 @@ const DoctorDashboard = () => {
 
       {/* Footer */}
       <div style={{ background: '#1a2744', padding: '24px 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 0, alignItems: 'center', justifyContent: 'space-between', textAlign: isMobile ? 'center' : 'left' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, background: '#1565c0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ color: '#fff', fontSize: 16 }}>❤️</span>

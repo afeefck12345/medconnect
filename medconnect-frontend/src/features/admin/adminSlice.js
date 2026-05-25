@@ -7,7 +7,7 @@ export const getAllUsers = createAsyncThunk('admin/getAllUsers', async (_, { rej
     const { data } = await API.get('/admin/users')
     return data
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || err.message)
   }
 })
 
@@ -17,7 +17,7 @@ export const deleteUser = createAsyncThunk('admin/deleteUser', async (id, { reje
     await API.delete(`/admin/users/${id}`)
     return id
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || err.message)
   }
 })
 
@@ -27,7 +27,7 @@ export const getAllDoctors = createAsyncThunk('admin/getAllDoctors', async (_, {
     const { data } = await API.get('/admin/doctors')
     return data
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || err.message)
   }
 })
 
@@ -35,9 +35,9 @@ export const getAllDoctors = createAsyncThunk('admin/getAllDoctors', async (_, {
 export const approveDoctor = createAsyncThunk('admin/approveDoctor', async (id, { rejectWithValue }) => {
   try {
     const { data } = await API.put(`/admin/doctors/${id}/approve`)
-    return data
+    return data.doctor
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || err.message)
   }
 })
 
@@ -45,9 +45,9 @@ export const approveDoctor = createAsyncThunk('admin/approveDoctor', async (id, 
 export const rejectDoctor = createAsyncThunk('admin/rejectDoctor', async (id, { rejectWithValue }) => {
   try {
     const { data } = await API.put(`/admin/doctors/${id}/reject`)
-    return data
+    return data.doctor
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || err.message)
   }
 })
 
@@ -57,7 +57,7 @@ export const getAnalytics = createAsyncThunk('admin/getAnalytics', async (_, { r
     const { data } = await API.get('/admin/analytics')
     return data
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || err.message)
   }
 })
 
@@ -67,7 +67,7 @@ export const getAllAppointments = createAsyncThunk('admin/getAllAppointments', a
     const { data } = await API.get('/admin/appointments')
     return data
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || err.message)
   }
 })
 
@@ -94,9 +94,11 @@ const adminSlice = createSlice({
       .addCase(getAllUsers.rejected, (state, action) => { state.loading = false; state.error = action.payload })
 
       // Delete User
+      .addCase(deleteUser.pending, (state) => { state.error = null })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.users = state.users.filter((user) => user._id !== action.payload)
       })
+      .addCase(deleteUser.rejected, (state, action) => { state.error = action.payload })
 
       // Get All Doctors
       .addCase(getAllDoctors.pending, (state) => { state.loading = true })
@@ -104,16 +106,20 @@ const adminSlice = createSlice({
       .addCase(getAllDoctors.rejected, (state, action) => { state.loading = false; state.error = action.payload })
 
       // Approve Doctor
+      .addCase(approveDoctor.pending, (state) => { state.error = null })
       .addCase(approveDoctor.fulfilled, (state, action) => {
         const index = state.doctors.findIndex((d) => d._id === action.payload._id)
         if (index !== -1) state.doctors[index] = action.payload
       })
+      .addCase(approveDoctor.rejected, (state, action) => { state.error = action.payload })
 
       // Reject Doctor
+      .addCase(rejectDoctor.pending, (state) => { state.error = null })
       .addCase(rejectDoctor.fulfilled, (state, action) => {
         const index = state.doctors.findIndex((d) => d._id === action.payload._id)
         if (index !== -1) state.doctors[index] = action.payload
       })
+      .addCase(rejectDoctor.rejected, (state, action) => { state.error = action.payload })
 
       // Get Analytics
       .addCase(getAnalytics.pending, (state) => { state.loading = true })

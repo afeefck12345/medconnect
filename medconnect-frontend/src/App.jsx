@@ -14,11 +14,14 @@ import DoctorDetailPage from './pages/patient/DoctorDetailPage'
 import AppointmentsPage from './pages/patient/AppointmentsPage'
 import PatientProfilePage from './pages/patient/PatientProfilePage'
 import PrescriptionsPage from './pages/patient/PrescriptionsPage'
+import MyReviewsPage from './pages/patient/MyReviewsPage'
 import DoctorDashboard from './pages/doctor/DoctorDashboard'
 import DoctorSchedulePage from './pages/doctor/DoctorSchedulePage'
 import DoctorAppointmentsPage from './pages/doctor/DoctorAppointmentsPage'
 import DoctorPrescriptionsPage from './pages/doctor/DoctorPrescriptionsPage'
 import DoctorProfilePage from './pages/doctor/DoctorProfilePage'
+import DoctorVideoSettingsPage from './pages/doctor/DoctorVideoSettingsPage'
+import NotificationsPage from './pages/NotificationsPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
 import AdminDoctorsPage from './pages/admin/AdminDoctorsPage'
@@ -38,8 +41,10 @@ function App() {
   // Simple loading screen to prevent flickering on refresh
   if (loading && !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f0f4fa', gap: 16 }}>
+        <div style={{ width: 48, height: 48, border: '4px solid #e3f2fd', borderTop: '4px solid #1565c0', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <span style={{ color: '#90a4ae', fontSize: 14, fontWeight: 500, fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif" }}>Loading MedConnect...</span>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
@@ -83,6 +88,12 @@ function App() {
             <PrescriptionsPage />
           </ProtectedRoute>
         } />
+        <Route path="/reviews" element={
+          <ProtectedRoute allowedRoles={['patient']}>
+            <MyReviewsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/my-reviews" element={<Navigate to="/reviews" replace />} />
 
         {/* Doctor Routes */}
         <Route path="/doctor/dashboard" element={
@@ -108,6 +119,11 @@ function App() {
         <Route path="/doctor/profile" element={
           <ProtectedRoute allowedRoles={['doctor']}>
             <DoctorProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/doctor/video-settings" element={
+          <ProtectedRoute allowedRoles={['doctor']}>
+            <DoctorVideoSettingsPage />
           </ProtectedRoute>
         } />
 
@@ -137,6 +153,11 @@ function App() {
         <Route path="/consultation" element={
           <ProtectedRoute allowedRoles={['patient', 'doctor']}>
             <VideoConsultationPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/notifications" element={
+          <ProtectedRoute allowedRoles={['patient', 'doctor', 'admin']}>
+            <NotificationsPage />
           </ProtectedRoute>
         } />
 

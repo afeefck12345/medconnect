@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -19,28 +19,7 @@ const VideoConsultationPage = () => {
   const [isVideoOff, setIsVideoOff] = useState(false)
   const [duration, setDuration] = useState(0)
 
-  useEffect(() => {
-    const script = document.createElement('script')
-    script.src = 'https://meet.jit.si/external_api.js'
-    script.async = true
-    script.onload = () => initJitsi()
-    script.onerror = () => setStatus('error')
-    document.body.appendChild(script)
-    return () => {
-      document.body.removeChild(script)
-      if (jitsiApi.current) jitsiApi.current.dispose()
-    }
-  }, [])
-
-  useEffect(() => {
-    let timer
-    if (status === 'ready') {
-      timer = setInterval(() => setDuration((d) => d + 1), 1000)
-    }
-    return () => clearInterval(timer)
-  }, [status])
-
-  const initJitsi = () => {
+  const initJitsi = useCallback(() => {
     if (!window.JitsiMeetExternalAPI) { setStatus('error'); return }
     const options = {
       roomName,
@@ -72,7 +51,28 @@ const VideoConsultationPage = () => {
       jitsiApi.current.addEventListener('audioMuteStatusChanged', ({ muted }) => setIsMuted(muted))
       jitsiApi.current.addEventListener('videoMuteStatusChanged', ({ muted }) => setIsVideoOff(muted))
     } catch { setStatus('error') }
-  }
+  }, [roomName, user?.email, user?.name])
+
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://meet.jit.si/external_api.js'
+    script.async = true
+    script.onload = () => initJitsi()
+    script.onerror = () => setStatus('error')
+    document.body.appendChild(script)
+    return () => {
+      document.body.removeChild(script)
+      if (jitsiApi.current) jitsiApi.current.dispose()
+    }
+  }, [initJitsi])
+
+  useEffect(() => {
+    let timer
+    if (status === 'ready') {
+      timer = setInterval(() => setDuration((d) => d + 1), 1000)
+    }
+    return () => clearInterval(timer)
+  }, [status])
 
   const formatDuration = (secs) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0')

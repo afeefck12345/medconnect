@@ -117,9 +117,10 @@ const updateAppointmentStatus = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this appointment' });
     }
 
-    if (status === 'confirmed' && appointment.paymentStatus !== 'paid') {
+    // Prevent re-confirming/re-rejecting an already-decided appointment
+    if (appointment.status !== 'pending' && (status === 'confirmed' || status === 'rejected')) {
       return res.status(400).json({
-        message: 'Appointments must be paid before the doctor can confirm them',
+        message: `Cannot ${status} an appointment that is already ${appointment.status}`,
       });
     }
 

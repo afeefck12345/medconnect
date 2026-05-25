@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { getMyAppointments, bookAppointment } from '../../features/appointment/appointmentSlice'
+import {
+  getMyAppointments,
+  bookAppointment,
+  cancelAppointment,
+  rescheduleAppointment,
+} from '../../features/appointment/appointmentSlice'
 import { getAllDoctors } from '../../features/doctor/doctorSlice'
 
 const statusConfig = {
@@ -25,12 +30,28 @@ const AppointmentsPage = () => {
     doctorId: location.state?.doctorId || '',
     date: '',
     timeSlot: '',
-    reason: '',
+    symptoms: '',
   })
+  const [reschedulingAppointment, setReschedulingAppointment] = useState(null)
+  const [rescheduleData, setRescheduleData] = useState({
+    date: '',
+    timeSlot: '',
+    symptoms: '',
+  })
+
+  // Responsive States
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     dispatch(getMyAppointments())
     dispatch(getAllDoctors())
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [dispatch])
 
   const handleBook = async (e) => {
@@ -38,7 +59,44 @@ const AppointmentsPage = () => {
     const res = await dispatch(bookAppointment(bookingData))
     if (!res.error) {
       setShowBooking(false)
+      setBookingData({
+        doctorId: '',
+        date: '',
+        timeSlot: '',
+        symptoms: '',
+      })
       dispatch(getMyAppointments())
+    }
+  }
+
+  const openReschedule = (appointment) => {
+    const date = appointment.date ? new Date(appointment.date).toISOString().split('T')[0] : ''
+    setReschedulingAppointment(appointment)
+    setRescheduleData({
+      date,
+      timeSlot: appointment.timeSlot || '',
+      symptoms: appointment.symptoms || '',
+    })
+  }
+
+  const handleCancelAppointment = async (appointment) => {
+    const confirmed = window.confirm('Cancel this appointment?')
+    if (!confirmed) return
+
+    await dispatch(cancelAppointment(appointment._id))
+  }
+
+  const handleReschedule = async (e) => {
+    e.preventDefault()
+    if (!reschedulingAppointment) return
+
+    const res = await dispatch(rescheduleAppointment({
+      id: reschedulingAppointment._id,
+      appointmentData: rescheduleData,
+    }))
+
+    if (!res.error) {
+      setReschedulingAppointment(null)
     }
   }
 
@@ -53,7 +111,7 @@ const AppointmentsPage = () => {
     <div style={{ fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif", background: '#f0f4fa', minHeight: '100vh' }}>
 
       {/* Top Info Bar */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
+      <div className="mobile-hide" style={{ background: '#fff', borderBottom: '1px solid #e8edf5', padding: '8px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
           <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -83,24 +141,49 @@ const AppointmentsPage = () => {
             </div>
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 20 }}>Med<span style={{ color: '#90caf9' }}>Connect</span></span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {['Home', 'Doctors', 'Profile'].map(item => (
-              <button key={item} onClick={() => navigate(`/${item.toLowerCase()}`)}
-                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}
-                onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
-                onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+          {isMobile ? (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.6rem', cursor: 'pointer', padding: '8px' }}
+            >
+              ☰
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {['Home', 'Doctors', 'Reviews', 'Profile'].map(item => (
+                <button key={item} onClick={() => navigate(`/${item.toLowerCase()}`)}
+                  style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}
+                  onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
+                  onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
+                >{item}</button>
+              ))}
+              <button
+                onClick={() => setShowBooking(true)}
+                style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 13, padding: '9px 20px', borderRadius: 8, cursor: 'pointer', border: 'none', marginLeft: 8 }}
+                onMouseEnter={e => e.currentTarget.style.background = '#e3f2fd'}
+                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+              >
+                + Book Appointment
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Mobile Dropdown Panel */}
+        {isMobile && mobileMenuOpen && (
+          <div style={{ background: '#1565c0', padding: '12px 24px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            {['Home', 'Doctors', 'Reviews', 'Profile'].map(item => (
+              <button key={item} onClick={() => { navigate(`/${item === 'Home' ? 'home' : item.toLowerCase()}`); setMobileMenuOpen(false); }}
+                style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 15, padding: '10px 0', cursor: 'pointer', textAlign: 'left', width: '100%' }}
               >{item}</button>
             ))}
             <button
-              onClick={() => setShowBooking(true)}
-              style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 13, padding: '9px 20px', borderRadius: 8, cursor: 'pointer', border: 'none', marginLeft: 8 }}
-              onMouseEnter={e => e.currentTarget.style.background = '#e3f2fd'}
-              onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+              onClick={() => { setShowBooking(true); setMobileMenuOpen(false); }}
+              style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 14, padding: '10px', borderRadius: 8, cursor: 'pointer', border: 'none', width: '100%', margin: '4px 0', textAlign: 'center' }}
             >
               + Book Appointment
             </button>
           </div>
-        </div>
+        )}
       </nav>
 
       {/* Page Hero */}
@@ -116,7 +199,7 @@ const AppointmentsPage = () => {
 
       {/* Stats Strip — floats over hero */}
       <div style={{ maxWidth: 1100, margin: '-36px auto 0', padding: '0 24px', position: 'relative', zIndex: 10 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+        <div className="responsive-grid-4">
           {[
             { label: 'Total', value: statusCounts.all, icon: '📋', color: '#1565c0', bg: '#e3f2fd' },
             { label: 'Confirmed', value: statusCounts.confirmed, icon: '✅', color: '#2e7d32', bg: '#e8f5e9' },
@@ -161,12 +244,12 @@ const AppointmentsPage = () => {
               return (
                 <div
                   key={apt._id}
-                  style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', boxShadow: '0 2px 12px rgba(21,101,192,0.05)', border: '1.5px solid #e8edf5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.2s' }}
+                  style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', boxShadow: '0 2px 12px rgba(21,101,192,0.05)', border: '1.5px solid #e8edf5', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: 16, transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = '#1565c0'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(21,101,192,0.12)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8edf5'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(21,101,192,0.05)' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg, #1565c0, #42a5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: 16 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg, #1565c0, #42a5f5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20, flexShrink: 0, alignSelf: isMobile ? 'flex-start' : 'center' }}>
                       {apt.doctor?.user?.name?.charAt(0)?.toUpperCase() || 'D'}
                     </div>
                     <div>
@@ -176,28 +259,49 @@ const AppointmentsPage = () => {
                       <p style={{ color: '#1565c0', fontSize: 12, fontWeight: 600, margin: '0 0 6px' }}>
                         {apt.doctor?.specialization || 'Specialist'}
                       </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 6 : 16 }}>
                         <span style={{ color: '#78909c', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                           📅 {new Date(apt.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                         </span>
                         <span style={{ color: '#78909c', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
                           🕐 {apt.timeSlot}
                         </span>
-                        {apt.reason && (
+                        {apt.symptoms && (
                           <span style={{ color: '#90a4ae', fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            💬 {apt.reason}
+                            💬 {apt.symptoms}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
                     <div style={{ background: s.bg, borderRadius: 20, padding: '7px 16px', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 13 }}>{s.icon}</span>
                       <span style={{ color: s.color, fontSize: 12, fontWeight: 700, textTransform: 'capitalize' }}>{s.label}</span>
                     </div>
+                    {['pending', 'confirmed'].includes(apt.status) && (
+                      <>
+                        <button
+                          onClick={() => openReschedule(apt)}
+                          style={{ background: '#e3f2fd', color: '#1565c0', fontWeight: 700, fontSize: 12, padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#bbdefb' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = '#e3f2fd' }}
+                        >
+                          Reschedule
+                        </button>
+                        <button
+                          onClick={() => handleCancelAppointment(apt)}
+                          style={{ background: '#ffebee', color: '#c62828', fontWeight: 700, fontSize: 12, padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer' }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#ffcdd2' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = '#ffebee' }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
                     <button
-                      onClick={() => navigate(`/doctors/${apt.doctor?._id}`)}
+                      onClick={() => apt.doctor?._id && navigate(`/doctors/${apt.doctor._id}`)}
+                      disabled={!apt.doctor?._id}
                       style={{ background: '#f0f4fa', color: '#546e7a', fontWeight: 600, fontSize: 12, padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer' }}
                       onMouseEnter={e => { e.currentTarget.style.background = '#e3f2fd'; e.currentTarget.style.color = '#1565c0' }}
                       onMouseLeave={e => { e.currentTarget.style.background = '#f0f4fa'; e.currentTarget.style.color = '#546e7a' }}
@@ -274,7 +378,7 @@ const AppointmentsPage = () => {
                   {/* Time Slots */}
                   <div>
                     <label style={{ color: '#1a2744', fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>Time Slot</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 8 }}>
                       {timeSlots.map((slot) => (
                         <button
                           key={slot}
@@ -296,10 +400,10 @@ const AppointmentsPage = () => {
 
                   {/* Reason */}
                   <div>
-                    <label style={{ color: '#1a2744', fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 8 }}>Reason for Visit</label>
+                    <label style={{ color: '#1a2744', fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 8 }}>Symptoms / Reason for Visit</label>
                     <textarea
-                      value={bookingData.reason}
-                      onChange={(e) => setBookingData({ ...bookingData, reason: e.target.value })}
+                      value={bookingData.symptoms}
+                      onChange={(e) => setBookingData({ ...bookingData, symptoms: e.target.value })}
                       placeholder="Describe your symptoms or reason for the visit..."
                       rows={3}
                       style={{ width: '100%', padding: '12px 16px', border: '1.5px solid #e0e7ef', borderRadius: 10, fontSize: 14, color: '#1a2744', background: '#f8faff', outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
@@ -327,9 +431,100 @@ const AppointmentsPage = () => {
         </div>
       )}
 
+      {/* Reschedule Modal */}
+      {reschedulingAppointment && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,71,161,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: '#fff', borderRadius: 24, width: '100%', maxWidth: 480, boxShadow: '0 24px 80px rgba(13,71,161,0.25)', overflow: 'hidden' }}>
+            <div style={{ background: 'linear-gradient(135deg, #1565c0, #0d47a1)', padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <h2 style={{ color: '#fff', fontWeight: 800, fontSize: 18, margin: '0 0 4px' }}>Reschedule Appointment</h2>
+                <p style={{ color: '#90caf9', fontSize: 13, margin: 0 }}>
+                  Dr. {reschedulingAppointment.doctor?.user?.name || 'Doctor'}
+                </p>
+              </div>
+              <button
+                onClick={() => setReschedulingAppointment(null)}
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: 34, height: 34, borderRadius: 8, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                x
+              </button>
+            </div>
+
+            <div style={{ padding: '28px' }}>
+              {error && (
+                <div style={{ background: '#ffebee', border: '1px solid #ef9a9a', borderRadius: 10, padding: '12px 16px', marginBottom: 20, color: '#c62828', fontSize: 13, fontWeight: 500 }}>
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleReschedule}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  <div>
+                    <label style={{ color: '#1a2744', fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 8 }}>New Date</label>
+                    <input
+                      type="date"
+                      value={rescheduleData.date}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
+                      required
+                      style={{ width: '100%', padding: '12px 16px', border: '1.5px solid #e0e7ef', borderRadius: 10, fontSize: 14, color: '#1a2744', background: '#f8faff', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ color: '#1a2744', fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 10 }}>New Time Slot</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 8 }}>
+                      {timeSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => setRescheduleData({ ...rescheduleData, timeSlot: slot })}
+                          style={{
+                            padding: '9px 4px', borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', border: '1.5px solid',
+                            background: rescheduleData.timeSlot === slot ? '#1565c0' : '#f8faff',
+                            color: rescheduleData.timeSlot === slot ? '#fff' : '#455a64',
+                            borderColor: rescheduleData.timeSlot === slot ? '#1565c0' : '#e0e7ef',
+                            boxShadow: rescheduleData.timeSlot === slot ? '0 4px 10px rgba(21,101,192,0.25)' : 'none',
+                          }}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ color: '#1a2744', fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 8 }}>Symptoms / Reason for Visit</label>
+                    <textarea
+                      value={rescheduleData.symptoms}
+                      onChange={(e) => setRescheduleData({ ...rescheduleData, symptoms: e.target.value })}
+                      placeholder="Update your symptoms or reason for the visit..."
+                      rows={3}
+                      style={{ width: '100%', padding: '12px 16px', border: '1.5px solid #e0e7ef', borderRadius: 10, fontSize: 14, color: '#1a2744', background: '#f8faff', outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      width: '100%', background: loading ? '#90caf9' : 'linear-gradient(135deg, #1565c0, #1976d2)',
+                      color: '#fff', fontWeight: 700, fontSize: 15, padding: '14px', borderRadius: 12, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 4px 16px rgba(21,101,192,0.3)', marginTop: 4, transition: 'opacity 0.2s'
+                    }}
+                  >
+                    {loading ? 'Saving...' : 'Save Reschedule'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div style={{ background: '#1a2744', padding: '24px 0' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', justifyContent: 'space-between', gap: isMobile ? 16 : 0, textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, background: '#1565c0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ color: '#fff', fontSize: 16 }}>❤️</span>

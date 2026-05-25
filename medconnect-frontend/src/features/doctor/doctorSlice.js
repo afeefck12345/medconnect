@@ -6,7 +6,7 @@ export const getAllDoctors = createAsyncThunk('doctor/getAll', async (_, { rejec
     const { data } = await API.get('/doctors')
     return data
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || 'Failed to fetch doctors')
   }
 })
 
@@ -15,7 +15,7 @@ export const getDoctorById = createAsyncThunk('doctor/getById', async (id, { rej
     const { data } = await API.get(`/doctors/${id}`)
     return data
   } catch (err) {
-    return rejectWithValue(err.response.data.message)
+    return rejectWithValue(err.response?.data?.message || 'Failed to fetch doctor')
   }
 })
 
@@ -33,7 +33,9 @@ const doctorSlice = createSlice({
       .addCase(getAllDoctors.pending, (state) => { state.loading = true })
       .addCase(getAllDoctors.fulfilled, (state, action) => { state.loading = false; state.doctors = action.payload })
       .addCase(getAllDoctors.rejected, (state, action) => { state.loading = false; state.error = action.payload })
-      .addCase(getDoctorById.fulfilled, (state, action) => { state.selectedDoctor = action.payload })
+      .addCase(getDoctorById.pending, (state) => { state.loading = true; state.error = null; state.selectedDoctor = null })
+      .addCase(getDoctorById.fulfilled, (state, action) => { state.loading = false; state.selectedDoctor = action.payload })
+      .addCase(getDoctorById.rejected, (state, action) => { state.loading = false; state.error = action.payload; state.selectedDoctor = null })
   },
 })
 

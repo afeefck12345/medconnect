@@ -1,21 +1,10 @@
 import DashboardLayout from '../../components/DashboardLayout'
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { getDoctorAppointments } from '../../features/appointment/appointmentSlice'
-import { logout } from '../../features/auth/authSlice'
 import API from '../../api/axios'
 import InlineNotice from '../../components/InlineNotice'
-
-/* ─── Google Fonts ─── */
-
-/* ─── Spinner ─── */
-const Spinner = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
-    <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2.5px solid #e5eaf5', borderTopColor: '#4361ee', animation: 'spin 0.7s linear infinite' }} />
-    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-  </div>
-)
 
 const statusColors = {
   pending: { background: '#fef3c7', color: '#d97706' },
@@ -33,9 +22,7 @@ const paymentColors = {
 const DoctorAppointmentsPageV2 = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const location = useLocation()
   const { appointments, loading } = useSelector((state) => state.appointment)
-  const { user } = useSelector((state) => state.auth)
   const [filter, setFilter] = useState('all')
   const [actionLoading, setActionLoading] = useState(null)
   const [notice, setNotice] = useState({ type: '', message: '' })
@@ -86,7 +73,7 @@ const DoctorAppointmentsPageV2 = () => {
   
   return (
     <DashboardLayout role="doctor">
-      <main style={{ marginLeft: sidebarW, flex: 1, padding: '32px 40px', transition: 'margin-left 0.25s ease' }}>
+      <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0d1b3e' }}>Appointments</h1>
           <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>{filtered.length} total</span>
@@ -108,7 +95,7 @@ const DoctorAppointmentsPageV2 = () => {
               key={tab}
               onClick={() => setFilter(tab)}
               style={{
-                padding: '8px 16px', borderRadius: '999px', fontSize: '0.875rem', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.18s', whiteSpace: 'nowrap',
+                padding: '8px 16px', borderRadius: '999px', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.18s', whiteSpace: 'nowrap',
                 background: filter === tab ? '#10b981' : '#fff',
                 color: filter === tab ? '#fff' : '#64748b',
                 border: filter === tab ? 'none' : '1.5px solid #e5eaf5',
@@ -282,7 +269,7 @@ const DoctorAppointmentsPageV2 = () => {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   )
 }
 

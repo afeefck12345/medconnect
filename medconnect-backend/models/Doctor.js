@@ -30,6 +30,11 @@ const doctorSchema = new mongoose.Schema({
   rating: { type: Number, default: 0 },
   totalReviews: { type: Number, default: 0 },
   isApproved: { type: Boolean, default: false },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Doctor', doctorSchema);

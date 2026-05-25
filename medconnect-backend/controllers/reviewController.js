@@ -9,6 +9,12 @@ const createReview = async (req, res) => {
   try {
     const { doctorId, appointmentId, rating, comment } = req.body;
 
+    // Validate rating range
+    const numRating = Number(rating);
+    if (!numRating || numRating < 1 || numRating > 5) {
+      return res.status(400).json({ message: 'Rating must be a number between 1 and 5' });
+    }
+
     // Check appointment exists and is completed
     const appointment = await Appointment.findById(appointmentId);
     if (!appointment) {
@@ -24,6 +30,11 @@ const createReview = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to review this appointment' });
     }
 
+    // Verify doctorId matches the appointment's doctor (prevent fraudulent reviews)
+    if (appointment.doctor.toString() !== doctorId.toString()) {
+      return res.status(400).json({ message: 'Doctor does not match this appointment' });
+    }
+
     // Check if review already exists
     const existing = await Review.findOne({ appointment: appointmentId });
     if (existing) {
@@ -34,16 +45,16 @@ const createReview = async (req, res) => {
       doctor: doctorId,
       patient: req.user._id,
       appointment: appointmentId,
-      rating,
+      rating: numRating,
       comment,
     });
 
-    // Update doctor's average rating
+    // Update doctor's average rating (stored as Number)
     const allReviews = await Review.find({ doctor: doctorId });
     const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
 
     await Doctor.findByIdAndUpdate(doctorId, {
-      rating: avgRating.toFixed(1),
+      rating: parseFloat(avgRating.toFixed(1)),
       totalReviews: allReviews.length,
     });
 
@@ -109,7 +120,7 @@ const deleteReview = async (req, res) => {
       : 0;
 
     await Doctor.findByIdAndUpdate(review.doctor, {
-      rating: avgRating.toFixed(1),
+      rating: allReviews.length ? parseFloat(avgRating.toFixed(1)) : 0,
       totalReviews: allReviews.length,
     });
 

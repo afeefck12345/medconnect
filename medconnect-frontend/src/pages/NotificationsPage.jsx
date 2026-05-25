@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import API from '../api/axios'
 import { logout } from '../features/auth/authSlice'
 
@@ -49,6 +49,24 @@ const NotificationsPage = () => {
   const handleLogout = () => { dispatch(logout()); navigate('/login') }
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
+  const homePath = user?.role === 'doctor' ? '/doctor/dashboard' : user?.role === 'admin' ? '/admin/dashboard' : '/home'
+  const navLinks = user?.role === 'doctor'
+    ? [
+        { label: 'Dashboard', path: '/doctor/dashboard' },
+        { label: 'Appointments', path: '/doctor/appointments' },
+        { label: 'Profile', path: '/doctor/profile' },
+      ]
+    : user?.role === 'admin'
+      ? [
+          { label: 'Dashboard', path: '/admin/dashboard' },
+          { label: 'Users', path: '/admin/users' },
+          { label: 'Doctors', path: '/admin/doctors' },
+        ]
+      : [
+          { label: 'Doctors', path: '/doctors' },
+          { label: 'Appointments', path: '/appointments' },
+          { label: 'Profile', path: '/profile' },
+        ]
 
   const getNotifIcon = (title = '') => {
     const t = title.toLowerCase()
@@ -86,7 +104,7 @@ const NotificationsPage = () => {
       {/* Navbar */}
       <nav style={{ background: '#1565c0', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 2px 12px rgba(21,101,192,0.18)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navigate(homePath)}>
             <div style={{ width: 38, height: 38, background: '#fff', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
                 <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z" fill="#1565c0"/>
@@ -95,15 +113,15 @@ const NotificationsPage = () => {
             <span style={{ color: '#fff', fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>Med<span style={{ color: '#90caf9' }}>Connect</span></span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {['Doctors', 'Appointments', 'Profile'].map(item => (
+            {navLinks.map((item) => (
               <button
-                key={item}
-                onClick={() => navigate(`/${item.toLowerCase()}`)}
+                key={item.path}
+                onClick={() => navigate(item.path)}
                 style={{ background: 'transparent', border: 'none', color: '#cfe2ff', fontWeight: 500, fontSize: 14, padding: '8px 16px', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s' }}
                 onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.12)'; e.target.style.color = '#fff' }}
                 onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.color = '#cfe2ff' }}
               >
-                {item}
+                {item.label}
               </button>
             ))}
             {/* Notifications active indicator */}
@@ -115,14 +133,16 @@ const NotificationsPage = () => {
                 <span style={{ background: '#ef5350', color: '#fff', fontSize: 11, fontWeight: 800, padding: '1px 7px', borderRadius: 20, minWidth: 18, textAlign: 'center' }}>{unreadCount}</span>
               )}
             </button>
-            <button
-              onClick={() => navigate('/doctors')}
-              style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 13, padding: '9px 20px', borderRadius: 8, cursor: 'pointer', border: 'none', marginLeft: 8, transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.target.style.background = '#e3f2fd' }}
-              onMouseLeave={e => { e.target.style.background = '#fff' }}
-            >
-              Get Appointment
-            </button>
+            {user?.role === 'patient' && (
+              <button
+                onClick={() => navigate('/doctors')}
+                style={{ background: '#fff', color: '#1565c0', fontWeight: 700, fontSize: 13, padding: '9px 20px', borderRadius: 8, cursor: 'pointer', border: 'none', marginLeft: 8, transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.target.style.background = '#e3f2fd' }}
+                onMouseLeave={e => { e.target.style.background = '#fff' }}
+              >
+                Get Appointment
+              </button>
+            )}
             <button
               onClick={handleLogout}
               style={{ background: 'rgba(255,255,255,0.1)', color: '#ffcdd2', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.15)', marginLeft: 4, transition: 'all 0.2s' }}

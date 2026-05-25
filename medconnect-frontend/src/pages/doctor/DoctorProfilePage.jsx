@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { getUserProfile, logout } from '../../features/auth/authSlice'
+import { getUserProfile, logout, updateUserProfile } from '../../features/auth/authSlice'
 import API from '../../api/axios'
 
 const SPECIALIZATIONS = [
@@ -73,7 +73,15 @@ const DoctorProfilePage = () => {
     e.preventDefault()
     setSaving(true); setError(null)
     try {
-      await API.post('/doctors/profile', { ...form, consultationFee: Number(form.fee), experience: Number(form.experience) })
+      const profilePayload = {
+        specialization: form.specialization,
+        experience: Number(form.experience) || 0,
+        consultationFee: Number(form.fee) || 0,
+        bio: form.bio,
+      }
+
+      await API.post('/doctors/profile', profilePayload)
+      await dispatch(updateUserProfile({ name: form.name, phone: form.phone }))
       dispatch(getUserProfile())
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
